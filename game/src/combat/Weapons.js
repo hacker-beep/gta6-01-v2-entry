@@ -2,11 +2,54 @@ import * as THREE from 'three';
 
 export class Weapons {
   constructor(scene, player) { this.scene = scene; this.player = player; this.enemies = []; this.selected = 'pistol'; this.ammo = 24; this.health = 100; this.feedback = ''; this.cooldown = 0; }
-  spawnEnemy(x, z, health = 3) {
-    const group = new THREE.Group(); group.name = 'Rook crew';
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.9, 3, 7), new THREE.MeshStandardMaterial({ color: '#733f38' })); body.position.y = 1; group.add(body);
-    const enemy = { group, position: group.position, health, maxHealth: health, alive: true, hitFlash: 0 };
-    group.position.set(x, 0.3, z); this.scene.add(group); this.enemies.push(enemy); return enemy;
+  spawnEnemy(x, z, health = 3, { aimAt = null, muzzleFlash = false } = {}) {
+    const group = new THREE.Group(); group.name = 'Rook crew guard';
+    const uniform = new THREE.MeshStandardMaterial({ color: '#344b59', roughness: 0.82 });
+    const vest = new THREE.MeshStandardMaterial({ color: '#63716a', roughness: 0.9 });
+    const skin = new THREE.MeshStandardMaterial({ color: '#b98968', roughness: 0.9 });
+    const dark = new THREE.MeshStandardMaterial({ color: '#202b31', roughness: 0.85 });
+    const makeBox = (parent, material, size, position) => {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
+      mesh.position.set(...position); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
+    };
+    const segment = (parent, material, start, end, width, depth = width) => {
+      const from = new THREE.Vector3(...start); const to = new THREE.Vector3(...end);
+      const direction = to.clone().sub(from); const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, direction.length(), depth), material);
+      mesh.position.copy(from).add(to).multiplyScalar(0.5);
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+      mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
+    };
+    makeBox(group, vest, [0.57, 0.7, 0.32], [0, 1.2, 0]);
+    makeBox(group, dark, [0.2, 0.14, 0.34], [0, 1.57, -0.01]);
+    makeBox(group, skin, [0.31, 0.34, 0.3], [0, 1.76, 0]);
+    makeBox(group, dark, [0.36, 0.14, 0.34], [0, 1.96, 0.01]);
+    for (const side of [-1, 1]) {
+      const hip = [side * 0.15, 0.85, 0];
+      segment(group, uniform, hip, [side * 0.17, 0.1, -0.015], 0.22, 0.25);
+      makeBox(group, dark, [0.25, 0.14, 0.37], [side * 0.17, 0.07, -0.055]);
+      if (aimAt) {
+        const shoulder = [side * 0.29, 1.47, 0];
+        segment(group, uniform, shoulder, [side * 0.19, 1.34, -0.31], 0.17, 0.19);
+        segment(group, skin, [side * 0.19, 1.34, -0.31], [side * 0.035, 1.37, -0.68], 0.13, 0.15);
+      } else {
+        segment(group, uniform, [side * 0.29, 1.47, 0], [side * 0.38, 1.05, -0.02], 0.17, 0.19);
+        segment(group, skin, [side * 0.38, 1.05, -0.02], [side * 0.36, 0.94, -0.22], 0.13, 0.15);
+      }
+    }
+    const enemy = { group, position: group.position, health, maxHealth: health, alive: true, hitFlash: 0, aiming: Boolean(aimAt) };
+    if (aimAt) {
+      group.rotation.y = Math.atan2(-(aimAt.x - x), -(aimAt.z - z));
+      makeBox(group, dark, [0.13, 0.11, 0.42], [0, 1.39, -0.84]);
+      makeBox(group, dark, [0.09, 0.13, 0.15], [0, 1.29, -0.66]);
+      if (muzzleFlash) {
+        const flash = new THREE.Mesh(new THREE.SphereGeometry(0.23, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffd86c' }));
+        flash.position.set(0, 1.4, -1.08); group.add(flash);
+        const glow = new THREE.MeshBasicMaterial({ color: '#ffbd47', transparent: true, opacity: 0.88 });
+        const tracer = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 3.5, 6), glow);
+        tracer.rotation.x = -Math.PI / 2; tracer.position.set(0, 1.4, -2.85); group.add(tracer);
+      }
+    }
+    group.position.set(x, 0, z); this.scene.add(group); this.enemies.push(enemy); return enemy;
   }
   aimTarget(maxDistance = 38) {
     let best = null; let score = maxDistance;

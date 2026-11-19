@@ -11,10 +11,19 @@ export class PoliceAI {
   createHeli() {
     const root = new THREE.Group(); root.name = 'VBPD air unit';
     const body = new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.25, 4.4), this.material); body.position.y = 9; root.add(body);
+    const cockpit = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.88, 1.65), new THREE.MeshStandardMaterial({ color: '#29434b', emissive: '#13292e', metalness: 0.2, roughness: 0.36 }));
+    cockpit.position.set(0, 9.05, 1.42); root.add(cockpit);
+    const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 4.1, 8), this.material); tail.rotation.x = Math.PI / 2; tail.position.set(0, 9.08, -3.65); root.add(tail);
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.15, 0.72), this.material); fin.position.set(0, 9.5, -5.38); root.add(fin);
+    const stabilizer = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.12, 0.7), this.material); stabilizer.position.set(0, 9.05, -5.05); root.add(stabilizer);
     const lamp = new THREE.SpotLight('#fff0b2', 2.5, 75, Math.PI / 7, 0.5, 1.2);
     lamp.position.set(0, 8.4, 1.8); lamp.target.position.set(0, 0, -5); root.add(lamp, lamp.target);
     const rotor = new THREE.Mesh(new THREE.BoxGeometry(8, 0.08, 0.16), this.blue); rotor.position.y = 9.8; root.add(rotor);
-    this.scene.add(root); return { root, lamp, rotor, offset: { x: 12, y: 0, z: -7 } };
+    const crossRotor = new THREE.Mesh(rotor.geometry, rotor.material); crossRotor.rotation.y = Math.PI / 2; rotor.add(crossRotor);
+    const beamMaterial = new THREE.MeshStandardMaterial({ color: '#ffe9a6', emissive: '#927637', transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide });
+    const searchlight = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 20), beamMaterial); searchlight.renderOrder = 1; root.add(searchlight);
+    root.scale.setScalar(1.55);
+    this.scene.add(root); return { root, lamp, rotor, searchlight, offset: { x: 12, y: 0, z: -7 } };
   }
 
   ensure(level, player) {
@@ -43,7 +52,7 @@ export class PoliceAI {
       const distance = Math.hypot(dx, dz); const desired = Math.atan2(-dx, -dz);
       let delta = Math.atan2(Math.sin(desired - car.heading), Math.cos(desired - car.heading));
       car.heading += THREE.MathUtils.clamp(delta, -1.8 * dt, 1.8 * dt);
-      const speed = Math.min(car.spec.topSpeed * 0.78, 13 + level * 2.5);
+      const speed = car.shotPursuitSpeed ?? Math.min(car.spec.topSpeed * 0.78, 13 + level * 2.5);
       const moveX = -Math.sin(car.heading) * Math.min(distance, speed * dt);
       const moveZ = -Math.cos(car.heading) * Math.min(distance, speed * dt);
       this.collision.move(car.position, moveX, moveZ, car.radius);
@@ -56,7 +65,19 @@ export class PoliceAI {
       root.position.set(player.target.x + offset.x, offset.y, player.target.z + offset.z);
       root.rotation.y = player.facing;
       this.heli.rotor.rotation.y += dt * 18;
-      this.heli.lamp.target.position.set(player.target.x - root.position.x, -offset.y, player.target.z - root.position.z);
+      root.updateMatrixWorld(true);
+      const target = player.target.clone();
+      root.worldToLocal(target);
+      this.heli.lamp.target.position.copy(target);
+      const beam = this.heli.searchlight;
+      const start = this.heli.lamp.position;
+      const direction = this.heli.lamp.target.position.clone().sub(start);
+      const length = direction.length();
+      if (length > 0.01) {
+        beam.position.copy(start).addScaledVector(direction, 0.5);
+        beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().negate().normalize());
+        beam.scale.set(length * 0.2, length, length * 0.2);
+      }
     }
   }
 

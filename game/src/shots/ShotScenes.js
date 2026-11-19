@@ -21,8 +21,8 @@ export function createShotScenes(app) {
     systems.missions.start(config.mission); systems.weapons.health = config.health; systems.weapons.ammo = config.ammo;
     systems.weapons.enemies.forEach(enemy => app.scene.remove(enemy.group)); systems.weapons.enemies.length = 0;
     if (config.enemies) {
-      systems.weapons.spawnEnemy(config.x + 4.2, config.z - 6.5, 3);
-      systems.weapons.spawnEnemy(config.x - 4.2, config.z - 7.5, 2);
+      systems.weapons.spawnEnemy(config.x + 4.2, config.z - 6.5, 3, { aimAt: player.target, muzzleFlash: true });
+      systems.weapons.spawnEnemy(config.x - 4.2, config.z - 7.5, 2, { aimAt: player.target });
     }
     if (config.driving) {
       let car = player.car;
@@ -35,8 +35,17 @@ export function createShotScenes(app) {
       systems.wanted.commitCrime(3); systems.wanted.setLevel(3);
       systems.dispatch.messages = [{ callsign: 'Harbor 12', text: 'Air unit has a visual. Road control ahead. All units converge.', district: state.city.districtAt(config.x,config.z).name, age: 0 }];
       systems.police.ensure(3, player);
-      systems.police.heli.offset = { x: 8, y: 2, z: -26 };
+      systems.police.heli.offset = { x: 2, y: -5, z: -15 };
+      const pursuit = systems.police.units[0];
+      pursuit.position.set(player.target.x + Math.sin(player.facing) * 8, 0.12, player.target.z + Math.cos(player.facing) * 8);
+      pursuit.heading = player.facing; pursuit.shotPursuitSpeed = 19; app.vehicles.animate(pursuit, 0);
       app.vehicles.spawn(config.x + 18, config.z + 15, 0, { traffic: true, model: 1 });
+    }
+    if (name === 'driveCarjacking') {
+      systems.police.ensure(config.wanted, player);
+      const pursuit = systems.police.units[0];
+      pursuit.position.set(player.target.x + Math.sin(player.facing) * 9, 0.12, player.target.z + Math.cos(player.facing) * 9);
+      pursuit.heading = player.facing; pursuit.shotPursuitSpeed = 24.5; app.vehicles.animate(pursuit, 0);
     }
     if (name === 'garageEconomy') {
       systems.shops.owned = new Set(['engine','armor','pistol']);
@@ -44,9 +53,10 @@ export function createShotScenes(app) {
     }
     systems.missions.dialogue = name === 'coverHeliChase' ? 'INEZ / “The drive is in the trunk. Lose the air unit.”' : systems.missions.dialogue;
     app.chase.snap(player);
-    if (name === 'coverHeliChase') app.chase.setOrbit(player.facing, 0.14, 1);
+    if (name === 'coverHeliChase') app.chase.setOrbit(player.facing, 0.14, 1.35);
+    if (name === 'driveCarjacking') app.chase.setOrbit(player.facing, 0.14, 1.4);
     if (config.camera) app.chase.setOrbit(config.camera.heading, config.camera.pitch, config.camera.distance);
-    if (config.camera || name === 'coverHeliChase') app.chase.update(0, player);
+    if (config.camera || name === 'coverHeliChase' || name === 'driveCarjacking') app.chase.update(0, player);
     app.sky.update(0, player.target, app.camera); app.renderer.render(app.scene, app.camera);
     return state.snapshot();
   };
