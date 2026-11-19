@@ -10,6 +10,19 @@ import { PlayerController } from './player/PlayerController.js';
 import { Carjacking } from './vehicles/Carjacking.js';
 import { TrafficAI } from './traffic/TrafficAI.js';
 import { Pedestrians } from './people/Pedestrians.js';
+import { WantedSystem } from './police/WantedSystem.js';
+import { PoliceDispatch } from './police/PoliceDispatch.js';
+import { PoliceAI } from './police/PoliceAI.js';
+import { MissionDirector } from './missions/MissionDirector.js';
+import { Weapons } from './combat/Weapons.js';
+import { ShopsAndGarage } from './economy/ShopsAndGarage.js';
+import { Reputation } from './economy/Reputation.js';
+import { Hud } from './ui/Hud.js';
+import { Minimap } from './ui/Minimap.js';
+import { Menus } from './ui/Menus.js';
+import { SaveGame } from './core/SaveGame.js';
+import { AudioEngine } from './audio/AudioEngine.js';
+import { createShotScenes } from './shots/ShotScenes.js';
 
 /** Composition root and fixed-step simulation. Each subsystem owns one concern. */
 class VermilionBay {
@@ -68,6 +81,19 @@ class VermilionBay {
       traffic: this.traffic, city: this.city,
       pedestrians: this.pedestrians, vehicles: this.vehicles,
     });
+    this.systems = {
+      wanted: new WantedSystem(this.state, this.city), dispatch: new PoliceDispatch(),
+      police: new PoliceAI(this.scene, this.vehicles, this.collision, this.state),
+      missions: new MissionDirector(this.state), weapons: new Weapons(this.scene, this.player),
+      shops: new ShopsAndGarage(this.state, this.player), reputation: new Reputation(this.state),
+      hud: new Hud(), minimap: new Minimap(), audio: new AudioEngine(),
+    };
+    this.menus = new Menus(value => this.setPaused(value));
+    this.systems.save = new SaveGame(this.state, this.systems.missions, this.systems.shops, this.systems.reputation);
+    this.state.wantedSystem = this.systems.wanted;
+    this.state.attachSystems(this.systems);
+    this.shotScenes = createShotScenes(this);
+    this.systems.missions.start(0);
     const hour = this.params.get('hour');
     if (hour !== null && Number.isFinite(Number(hour))) this.sky.setTimeOfDay(Number(hour));
     // shot= is reserved for phase three. No scene is silently faked here.
@@ -99,13 +125,21 @@ class VermilionBay {
     window.game = {
       state,
       ready: true,
-      version: 'phase-1',
+      version: 'phase-2',
       snapshot: () => ({ ...state.snapshot(), simulation: { ticks: app.ticks, paused: app.paused },
         render: { calls: app.renderer.info.render.calls, triangles: app.renderer.info.render.triangles } }),
       setTimeOfDay: hour => state.setTimeOfDay(hour),
       setMoney: amount => state.setMoney(amount),
       setRespect: amount => state.setRespect(amount),
       setWantedLevel: level => state.setWantedLevel(level),
+      commitCrime: severity => state.commitCrime(severity),
+      startMission: index => app.systems.missions.start(index),
+      advanceMission: () => app.systems.missions.advance(),
+      buyUpgrade: id => app.systems.shops.buy(id),
+      save: () => app.systems.save.save(),
+      load: () => app.systems.save.load(),
+      ShotScenes: app.shotScenes,
+      systems: app.systems,
       spawnPoliceChase: options => state.spawnPoliceChase(options),
       teleportPlayer: (x, z, heading) => state.teleportPlayer(x, z, heading),
       setCamera: options => state.setCamera(options),
@@ -137,6 +171,15 @@ class VermilionBay {
     this.player.update(dt, this.chase.heading);
     this.traffic.update(dt, this.player);
     this.pedestrians.update(dt, this.player);
+    const level = this.state.values.wanted;
+    this.systems.police.update(dt, level, this.player);
+    this.systems.wanted.update(dt, this.systems.police.units.length > 0);
+    const district = this.city.districtAt(this.player.target.x, this.player.target.z);
+    this.systems.dispatch.update(dt, this.state.values.wanted, district.name);
+    this.systems.weapons.update(dt, this.input);
+    this.systems.missions.update(dt);
+    this.systems.reputation.update();
+    this.systems.hud.update({ ...this.state.snapshot(), vehicleName: this.player.car?.spec.name || '' }, this.city, this.systems.dispatch, this.systems.police);
     this.elapsed += dt;
     this.ticks++;
   }
@@ -160,6 +203,7 @@ class VermilionBay {
     this.frame++;
     this.input.poll();
     if (this.input.take('KeyP')) this.setPaused();
+    if (this.input.take('KeyK')) this.systems.save.save();
     if (!this.paused && !document.hidden) {
       this.accumulator += delta;
       let steps = 0;
@@ -184,6 +228,7 @@ class VermilionBay {
     this.canvas.removeEventListener('webglcontextlost', this.onLost);
     this.input.dispose();
     this.sky.dispose();
+    this.systems.audio.dispose();
     const geometries = new Set();
     const materials = new Set();
     this.scene.traverse(object => {

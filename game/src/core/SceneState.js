@@ -9,6 +9,7 @@ export class SceneState {
     this.pedestrians = pedestrians;
     this.vehicles = vehicles;
     this.values = { money: 0, respect: 0, wanted: 0 };
+    this.systems = {};
     this.listeners = new Map();
     this.pendingChase = null;
     this.version = 1;
@@ -95,11 +96,15 @@ export class SceneState {
     this.traffic.enabled = Boolean(enabled);
   }
 
+  attachSystems(systems) { this.systems = systems; }
+
+  commitCrime(severity = 1) { return this.systems.wanted?.commitCrime(severity); }
+
   snapshot() {
     const district = this.city.districtAt(this.player.target.x, this.player.target.z);
     return {
       version: this.version,
-      phase: 1,
+      phase: 2,
       progress: { ...this.values },
       district: { id: district.id, name: district.name },
       player: this.player.snapshot(),
@@ -109,6 +114,13 @@ export class SceneState {
       pedestrians: this.pedestrians.snapshot(),
       world: { buildings: this.city.buildingCount, districts: this.city.districts.length },
       pendingChase: this.pendingChase ? { ...this.pendingChase } : null,
+      wanted: this.systems.wanted?.snapshot() || { level: this.values.wanted },
+      police: this.systems.police?.snapshot() || {},
+      dispatch: this.systems.dispatch?.snapshot() || [],
+      mission: this.systems.missions?.snapshot() || {},
+      combat: this.systems.weapons?.snapshot() || {},
+      economy: this.systems.reputation?.snapshot() || {},
+      shop: this.systems.shops?.snapshot() || {},
     };
   }
 }
