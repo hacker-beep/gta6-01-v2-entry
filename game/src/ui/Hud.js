@@ -2,11 +2,12 @@ const style = `position:fixed;color:#f4ecd7;background:rgba(14,30,34,.88);border
 
 export class Hud {
   constructor() {
-    this.nodes = Object.fromEntries(['mission','status','dispatch','minimap','vehicle','dialogue','radio','weapons'].map(id => [id, document.getElementById(id)]));
+    this.nodes = Object.fromEntries(['mission','status','dispatch','garage','minimap','vehicle','dialogue','radio','weapons'].map(id => [id, document.getElementById(id)]));
     for (const node of Object.values(this.nodes)) { node.style.cssText = style; }
     Object.assign(this.nodes.mission.style, { left: '18px', top: '18px', width: '295px' });
     Object.assign(this.nodes.status.style, { right: '18px', top: '18px' });
     Object.assign(this.nodes.dispatch.style, { left: '18px', top: '126px', width: '260px' });
+    Object.assign(this.nodes.garage.style, { left: '18px', top: '126px', width: '280px' });
     Object.assign(this.nodes.minimap.style, { right: '18px', bottom: '18px', width: '220px', height: '154px', padding: '0', border: '1px solid #dbc68e' });
     Object.assign(this.nodes.vehicle.style, { right: '18px', top: '86px' });
     Object.assign(this.nodes.dialogue.style, { left: '50%', bottom: '26px', transform: 'translateX(-50%)', width: 'min(540px, 72vw)', textAlign: 'center' });
@@ -31,6 +32,8 @@ export class Hud {
     const stars='★'.repeat(snapshot.wanted.level)+'☆'.repeat(5-snapshot.wanted.level);
     this.nodes.status.innerHTML=`${stars}<br><b>$${snapshot.progress.money.toLocaleString()}</b> &nbsp; RESPECT ${snapshot.progress.respect}<br>HEALTH ${snapshot.combat.health}/100`;
     this.nodes.dispatch.innerHTML=dispatch.snapshot().map(line=>`<b>${line.callsign}</b> / ${line.text}`).join('<br>');
+    const owned=snapshot.shop.catalog.filter(item=>item.owned);
+    this.nodes.garage.innerHTML=owned.length?`<b>KITE &amp; KEY / MOTOR WORKS</b><br>${owned.map(item=>`✓ ${item.name} / ${item.effect}`).join('<br>')}<br>UPGRADES ${owned.length}/${snapshot.shop.catalog.length}`:'';
     this.nodes.vehicle.textContent=snapshot.player.mode==='driving'?`${snapshot.vehicleName} / ${Math.round(Math.abs(snapshot.player.speed)*3.6)} km/h`:snapshot.district.name;
     this.nodes.dialogue.textContent=mission.dialogue || 'MARA VENN / VERMILION BAY';
     this.nodes.radio.textContent='BAY FM / 88.6  •  Warm air, low tide';

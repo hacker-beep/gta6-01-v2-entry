@@ -50,6 +50,13 @@ class VermilionBay {
     this.renderer.render(this.scene, this.camera);
     document.getElementById('loading').hidden = true;
     this.canvas.focus();
+    const sceneName = this.params.get('scene');
+    if (sceneName) {
+      const selectScene = Object.hasOwn(this.shotScenes, sceneName) ? this.shotScenes[sceneName] : null;
+      if (!selectScene) throw Error(`Unknown scene: ${sceneName}`);
+      selectScene();
+      window.__shotReady = true;
+    }
     this.renderer.setAnimationLoop(time => this.animate(time));
   }
 
@@ -96,7 +103,6 @@ class VermilionBay {
     this.systems.missions.start(0);
     const hour = this.params.get('hour');
     if (hour !== null && Number.isFinite(Number(hour))) this.sky.setTimeOfDay(Number(hour));
-    // shot= is reserved for phase three. No scene is silently faked here.
   }
 
   setupEvents() {
@@ -245,6 +251,7 @@ class VermilionBay {
   }
 }
 
+window.__shotReady = false;
 try {
   new VermilionBay(document.getElementById('world'));
 } catch (error) {

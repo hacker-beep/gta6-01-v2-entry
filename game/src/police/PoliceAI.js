@@ -14,7 +14,7 @@ export class PoliceAI {
     const lamp = new THREE.SpotLight('#fff0b2', 2.5, 75, Math.PI / 7, 0.5, 1.2);
     lamp.position.set(0, 8.4, 1.8); lamp.target.position.set(0, 0, -5); root.add(lamp, lamp.target);
     const rotor = new THREE.Mesh(new THREE.BoxGeometry(8, 0.08, 0.16), this.blue); rotor.position.y = 9.8; root.add(rotor);
-    this.scene.add(root); return { root, lamp, rotor };
+    this.scene.add(root); return { root, lamp, rotor, offset: { x: 12, y: 0, z: -7 } };
   }
 
   ensure(level, player) {
@@ -52,10 +52,11 @@ export class PoliceAI {
     }
     if (this.heli) {
       const root = this.heli.root;
-      root.position.set(player.target.x + 12, 0, player.target.z - 7);
+      const offset = this.heli.offset;
+      root.position.set(player.target.x + offset.x, offset.y, player.target.z + offset.z);
       root.rotation.y = player.facing;
       this.heli.rotor.rotation.y += dt * 18;
-      this.heli.lamp.target.position.set(player.target.x - root.position.x, 0, player.target.z - root.position.z);
+      this.heli.lamp.target.position.set(player.target.x - root.position.x, -offset.y, player.target.z - root.position.z);
     }
   }
 
