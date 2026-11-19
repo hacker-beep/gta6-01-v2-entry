@@ -40,7 +40,7 @@ export class CityBuilder {
   }
 
   box(color, x, y, z, w, h, d, shadow = true) {
-    this.batch.add('box', this.batch.material(color), [x, y, z], [w, h, d], [0, 0, 0], shadow);
+    this.batch.add('box', this.batch.material(color, color === '#475356' ? 0.19 : 0.85, color === '#475356' ? 0.28 : 0), [x, y, z], [w, h, d], [0, 0, 0], shadow);
   }
 
   build() {

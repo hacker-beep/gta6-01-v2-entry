@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { reflectedLight } from '../render/RoadSheen.js';
 import { compactStaticMeshes } from '../world/Geometry.js';
 
 const PALETTE = ['#c9523d', '#e5c87e', '#527e86', '#eee0c2', '#344b59', '#a4829c', '#729889'];
@@ -102,6 +103,12 @@ export class Carjacking {
       }
     }
     compactStaticMeshes(group, () => true);
+    for (const side of [-1, 1]) {
+      for (const [end,color,length] of [[-1,'#ffe2a0',6],[1,'#ff3b21',4.5]]) {
+        const reflection=reflectedLight(color,2,length,.9);
+        reflection.position.set(side*w*.32,.018,end*(l/2+length*.4));group.add(reflection);
+      }
+    }
     group.position.set(x, 0.12, z);
     group.rotation.y = heading;
     this.scene.add(group);

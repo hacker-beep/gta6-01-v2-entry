@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { reflectedLight } from '../render/RoadSheen.js';
 import { GeometryBatch, seededRandom, makeSign } from './Geometry.js';
 
 /** Street furniture builds a readable human scale around the road network. */
@@ -56,7 +57,13 @@ export class Props {
     const dx = Math.sin(angle) * 1.2;
     const dz = Math.cos(angle) * 1.2;
     this.box('#486469', x + dx / 2, 7.1, z + dz / 2, 0.16, 0.16, 1.5, angle);
-    this.box('#f7deb1', x + dx, 7.05, z + dz, 0.65, 0.18, 1.05, angle);
+    this.batch.add('box', this.batch.material('#f7deb1'), [x + dx, 7.05, z + dz], [.65,.18,1.05], [0,angle,0]);
+    const lens=this.batch.material('#f7deb1');lens.emissive.set('#ffbf6c');lens.emissiveIntensity=2;
+    const roadX=this.city.roadsX.reduce((a,b)=>Math.abs(a-x)<Math.abs(b-x)?a:b);
+    if(Math.abs(roadX-x)<15) {
+      const reflection=reflectedLight('#ffbe70',1.6,8,.3);
+      reflection.position.set(roadX+Math.sign(x-roadX)*7.7,.145,z+dz);this.group.add(reflection);
+    }
   }
 
   hydrant(x, z) {

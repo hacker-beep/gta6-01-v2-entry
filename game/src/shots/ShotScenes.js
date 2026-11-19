@@ -1,3 +1,5 @@
+import { VehicleFire } from '../render/VehicleFire.js';
+
 const STAGES = {
   coverHeliChase: { x: 72, z: -72, hour: 17.2, money: 4280, respect: 2, wanted: 3, mission: 2, driving: true, health: 79, ammo: 19, heli: true },
   driveCarjacking: { x: -72, z: 72, hour: 16.4, money: 5350, respect: 4, wanted: 1, mission: 5, driving: true, health: 92, ammo: 22 },
@@ -9,6 +11,11 @@ export function createShotScenes(app) {
   const stage = name => {
     const config = STAGES[name]; if (!config) throw Error(`Unknown ShotScene: ${name}`);
     const { state, player, vehicles, systems } = app;
+    app.vehicleFire?.dispose(app.scene); app.vehicleFire = null;
+    if (app.burnedCar) {
+      app.scene.remove(app.burnedCar.group);
+      vehicles.cars.splice(vehicles.cars.indexOf(app.burnedCar), 1); app.burnedCar = null;
+    }
     for (const car of [...systems.police.units]) {
       app.scene.remove(car.group);
       app.vehicles.cars.splice(app.vehicles.cars.indexOf(car), 1);
@@ -24,6 +31,10 @@ export function createShotScenes(app) {
       systems.weapons.spawnEnemy(config.x + 4.2, config.z - 6.5, 3, { aimAt: player.target, muzzleFlash: true });
       systems.weapons.spawnEnemy(config.x - 4.2, config.z - 7.5, 2, { aimAt: player.target });
     }
+    if (config.enemies) {
+      app.burnedCar = vehicles.spawn(config.x + 7.5, config.z - 17, -0.65, { model: 0, color: '#302c29' });
+      app.vehicleFire = new VehicleFire(app.scene, config.x + 7.5, config.z - 18);
+    }
     if (config.driving) {
       let car = player.car;
       if (!car) { car = vehicles.spawn(config.x, config.z, -0.3, { model: 0, color: '#b94737' }); vehicles.acquire(car); player.car = car; player.avatar.visible = false; }
@@ -35,7 +46,9 @@ export function createShotScenes(app) {
       systems.wanted.commitCrime(3); systems.wanted.setLevel(3);
       systems.dispatch.messages = [{ callsign: 'Harbor 12', text: 'Air unit has a visual. Road control ahead. All units converge.', district: state.city.districtAt(config.x,config.z).name, age: 0 }];
       systems.police.ensure(3, player);
-      systems.police.heli.offset = { x: 2, y: -5, z: -15 };
+      systems.police.heli.root.scale.setScalar(2.1);
+      systems.police.heli.offset = { x: 1, y: -11, z: -11 };
+      systems.police.heli.yawOffset = 0.65;
       const pursuit = systems.police.units[0];
       pursuit.position.set(player.target.x + Math.sin(player.facing) * 8, 0.12, player.target.z + Math.cos(player.facing) * 8);
       pursuit.heading = player.facing; pursuit.shotPursuitSpeed = 19; app.vehicles.animate(pursuit, 0);

@@ -16,6 +16,14 @@ export class PoliceAI {
     const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 4.1, 8), this.material); tail.rotation.x = Math.PI / 2; tail.position.set(0, 9.08, -3.65); root.add(tail);
     const fin = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.15, 0.72), this.material); fin.position.set(0, 9.5, -5.38); root.add(fin);
     const stabilizer = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.12, 0.7), this.material); stabilizer.position.set(0, 9.05, -5.05); root.add(stabilizer);
+    for (const x of [-1.25, 1.25]) {
+      const skid = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 4.8, 6), this.material);
+      skid.rotation.x = Math.PI / 2; skid.position.set(x, 7.95, 0.1); root.add(skid);
+      for (const z of [-1, 1]) {
+        const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.8, 6), this.material);
+        strut.position.set(x, 8.3, z); root.add(strut);
+      }
+    }
     const lamp = new THREE.SpotLight('#fff0b2', 2.5, 75, Math.PI / 7, 0.5, 1.2);
     lamp.position.set(0, 8.4, 1.8); lamp.target.position.set(0, 0, -5); root.add(lamp, lamp.target);
     const rotor = new THREE.Mesh(new THREE.BoxGeometry(8, 0.08, 0.16), this.blue); rotor.position.y = 9.8; root.add(rotor);
@@ -65,7 +73,7 @@ export class PoliceAI {
       const root = this.heli.root;
       const offset = this.heli.offset;
       root.position.set(player.target.x + offset.x, offset.y, player.target.z + offset.z);
-      root.rotation.y = player.facing;
+      root.rotation.y = player.facing + (this.heli.yawOffset || 0);
       this.heli.rotor.rotation.y += dt * 18;
       root.updateMatrixWorld(true);
       const target = player.target.clone();

@@ -48,13 +48,14 @@ try {
     ],
   });
 
-  for (const shot of shots) {
+  for (const shot of shots.filter(shot => !process.env.SHOT || shot.name.includes(process.env.SHOT))) {
     const url = new URL(shot.query, `${origin}/`);
     const scene = url.searchParams.get('scene');
     if (!scene) throw Error(`${shot.name} query must select a scene`);
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
+    page.on('console', event => { if (event.type() === 'error') errors.push(event.text()); });
     page.on('requestfailed', request => errors.push(`${request.url()}: ${request.failure()?.errorText || 'request failed'}`));
     page.on('request', request => {
       if (new URL(request.url()).origin !== origin) errors.push(`Unexpected external request: ${request.url()}`);

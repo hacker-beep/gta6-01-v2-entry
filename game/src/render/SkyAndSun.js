@@ -19,8 +19,8 @@ const SKY_FRAGMENT = `
     float altitude = max(0.0, direction.y);
     vec3 color = mix(horizon, zenith, pow(altitude, 0.48));
     float alignment = max(0.0, dot(direction, sunDirection));
-    float glow = pow(alignment, 18.0) * 0.35;
-    float disc = smoothstep(0.9993, 0.99965, alignment);
+    float glow = pow(alignment, 12.0) * 0.65;
+    float disc = smoothstep(0.9988, 0.99955, alignment);
     color += solarColor * (glow + disc * 1.5);
     gl_FragColor = vec4(color, 1.0);
     #include <tonemapping_fragment>
@@ -82,14 +82,14 @@ export class SkyAndSun {
     const daylight = THREE.MathUtils.smoothstep(elevation, -0.13, 0.22);
     const golden = 1 - THREE.MathUtils.smoothstep(Math.max(0, elevation), 0.15, 0.65);
     // Sunset toward the northwest, visible along the principal boulevards.
-    this.sunDirection.set(-Math.cos(arc) * 0.65, Math.max(-0.2, elevation), -0.75).normalize();
+    this.sunDirection.set(-Math.cos(arc) * 0.30, Math.max(-0.2, elevation * 0.38), -0.95).normalize();
     const nightZenith = new THREE.Color('#142b48');
     const dayZenith = new THREE.Color('#76b7cc');
     const warmZenith = new THREE.Color('#d69a82');
     const dayHorizon = new THREE.Color('#d7ddd1');
-    const warmHorizon = new THREE.Color('#ff934d');
+    const warmHorizon = new THREE.Color('#ff853f');
     const nightHorizon = new THREE.Color('#63586b');
-    dayZenith.lerp(warmZenith, golden * 0.75);
+    dayZenith.lerp(warmZenith, golden * 0.9);
     dayHorizon.lerp(warmHorizon, golden);
     this.uniforms.zenith.value.copy(nightZenith).lerp(dayZenith, daylight);
     this.uniforms.horizon.value.copy(nightHorizon).lerp(dayHorizon, daylight);

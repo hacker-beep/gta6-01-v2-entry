@@ -183,6 +183,7 @@ class VermilionBay {
     const district = this.city.districtAt(this.player.target.x, this.player.target.z);
     this.systems.dispatch.update(dt, this.state.values.wanted, district.name);
     this.systems.weapons.update(dt, this.input);
+    this.vehicleFire?.update(dt);
     this.systems.missions.update(dt);
     this.systems.reputation.update();
     this.systems.hud.update({ ...this.state.snapshot(), vehicleName: this.player.car?.spec.name || '' }, this.city, this.systems.dispatch, this.systems.police);
@@ -246,6 +247,7 @@ class VermilionBay {
       material.map?.dispose();
       material.dispose();
     });
+    this.vehicleFire?.dispose(this.scene);
     this.renderer.dispose();
     window.game.ready = false;
   }
