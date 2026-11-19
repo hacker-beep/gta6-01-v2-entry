@@ -1,0 +1,11 @@
+{
+  "name": "vermilion-bay-low-tide",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node serve.ts",
+    "check": "node scripts/check.mjs",
+    "verify": "node scripts/verify.mjs"
+  }
+}

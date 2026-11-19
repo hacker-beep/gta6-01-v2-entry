@@ -1,0 +1,6 @@
+[
+  { "name": "1-cover.jpg", "query": "?shot=cover&seed=3535377" },
+  { "name": "2-drive.jpg", "query": "?shot=drive&seed=3535377" },
+  { "name": "3-combat.jpg", "query": "?shot=combat&seed=3535377" },
+  { "name": "4-garage.jpg", "query": "?shot=garage&seed=3535377" }
+]

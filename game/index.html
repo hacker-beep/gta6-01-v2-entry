@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#e9a478">
+  <link rel="icon" href="data:,">
+  <title>Vermilion Bay — Low Tide</title>
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #e9a478; }
+    canvas { display: block; width: 100%; height: 100%; outline: none; }
+    #hud { position: fixed; inset: 0; pointer-events: none; font-family: system-ui, sans-serif; }
+    .panel:empty { display: none; }
+    #loading { position: fixed; inset: 0; display: grid; place-items: center; color: #fff2d6; background: #1a353b; font: 18px system-ui; letter-spacing: .2em; }
+    #loading[hidden] { display: none; }
+  </style>
+  <script type="importmap">{"imports":{"three":"./vendor/three.min.js"}}</script>
+</head>
+<body>
+  <canvas id="world" tabindex="0" aria-label="Vermilion Bay game. WASD move or drive. E enter or exit. Shift sprint. Space brake. Drag to orbit camera."></canvas>
+  <div id="hud" aria-live="polite">
+    <div id="mission" class="panel"></div><div id="status" class="panel"></div>
+    <div id="dispatch" class="panel"></div><div id="minimap" class="panel"></div>
+    <div id="vehicle" class="panel"></div><div id="dialogue" class="panel"></div>
+    <div id="radio" class="panel"></div><div id="weapons" class="panel"></div>
+  </div>
+  <div id="loading">VERMILION BAY / LOW TIDE</div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
