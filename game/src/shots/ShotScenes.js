@@ -2,7 +2,7 @@ const STAGES = {
   coverHeliChase: { x: 72, z: -72, hour: 17.2, money: 4280, respect: 2, wanted: 3, mission: 2, driving: true, health: 79, ammo: 19, heli: true },
   driveCarjacking: { x: -72, z: 72, hour: 16.4, money: 5350, respect: 4, wanted: 1, mission: 5, driving: true, health: 92, ammo: 22 },
   onFootCombat: { x: 0, z: 0, hour: 17.1, money: 6720, respect: 6, wanted: 2, mission: 11, driving: false, health: 61, ammo: 14, enemies: true, camera: { heading: -0.3, pitch: 0.18, distance: 0.8 } },
-  garageEconomy: { x: -72, z: 216, hour: 16.8, money: 12850, respect: 10, wanted: 0, mission: 14, driving: false, health: 100, ammo: 24, garage: true, heading: -Math.PI / 2, camera: { heading: -Math.PI / 2, pitch: 0.14, distance: 1.3 } },
+  garageEconomy: { x: -72, z: 216, hour: 16.8, money: 12850, respect: 10, wanted: 0, mission: 14, driving: false, health: 100, ammo: 24, garage: true, heading: -Math.PI / 2, camera: { heading: -Math.PI / 2, pitch: 0.14, distance: 0.8 } },
 };
 
 export function createShotScenes(app) {
@@ -49,7 +49,7 @@ export function createShotScenes(app) {
     }
     if (name === 'garageEconomy') {
       systems.shops.owned = new Set(['engine','armor','pistol']);
-      vehicles.spawn(config.x + 17, config.z, -Math.PI / 2, { model: 0, color: '#d1a44c' });
+      vehicles.spawn(config.x + 1, config.z - 2.8, -0.5, { model: 0, color: '#d1a44c' });
     }
     systems.missions.dialogue = name === 'coverHeliChase' ? 'INEZ / “The drive is in the trunk. Lose the air unit.”' : systems.missions.dialogue;
     app.chase.snap(player);

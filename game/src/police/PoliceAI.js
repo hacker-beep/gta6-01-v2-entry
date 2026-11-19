@@ -47,6 +47,9 @@ export class PoliceAI {
 
   update(dt, level, player) {
     this.ensure(level, player);
+    const redPulse = Math.floor(performance.now() / 180) % 2 === 0;
+    this.red.emissiveIntensity = redPulse ? 3.5 : 0.8;
+    this.blue.emissiveIntensity = redPulse ? 0.8 : 3.5;
     for (const [index, car] of this.units.entries()) {
       const dx = player.target.x - car.position.x; const dz = player.target.z - car.position.z;
       const distance = Math.hypot(dx, dz); const desired = Math.atan2(-dx, -dz);
@@ -57,7 +60,6 @@ export class PoliceAI {
       const moveZ = -Math.cos(car.heading) * Math.min(distance, speed * dt);
       this.collision.move(car.position, moveX, moveZ, car.radius);
       car.speed = speed; this.vehicles.animate(car, dt);
-      for (const child of car.group.children) if (child.isGroup) child.visible = Math.floor(performance.now() / 180) % 2 === index % 2;
     }
     if (this.heli) {
       const root = this.heli.root;

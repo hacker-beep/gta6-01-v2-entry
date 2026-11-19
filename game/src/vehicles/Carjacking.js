@@ -20,6 +20,15 @@ export class Carjacking {
     this.bodyGeometry = new THREE.BoxGeometry(1, 1, 1);
     this.wheelGeometry = new THREE.CylinderGeometry(0.39, 0.39, 0.22, 12);
     this.lastInteraction = null;
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 64;
+    const context = canvas.getContext('2d');
+    const halo = context.createRadialGradient(32,32,0,32,32,32);
+    halo.addColorStop(0,'rgba(255,255,255,1)'); halo.addColorStop(0.12,'rgba(255,255,255,.95)');
+    halo.addColorStop(0.3,'rgba(255,255,255,.35)'); halo.addColorStop(1,'rgba(255,255,255,0)');
+    context.fillStyle=halo; context.fillRect(0,0,64,64);
+    this.lightTexture = new THREE.CanvasTexture(canvas);
+    this.lampMaterials = [new THREE.MeshStandardMaterial({color:'#fff4c1',emissive:'#ffe8a0',emissiveIntensity:5}),new THREE.MeshStandardMaterial({color:'#ff503b',emissive:'#ff2110',emissiveIntensity:4})];
+    this.haloMaterials = ['#ffe4a0','#ff3220'].map(color=>new THREE.SpriteMaterial({map:this.lightTexture,color,transparent:true,opacity:.85,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));
   }
 
   material(color, metalness = 0) {
@@ -56,8 +65,12 @@ export class Carjacking {
     this.piece(group, '#b4b8ad', 0, 0.57, l / 2 + 0.05, w, 0.16, 0.15, 0.55);
     this.piece(group, '#e5dcae', 0, 0.76, l / 2 + 0.09, 0.58, 0.2, 0.02);
     for (const side of [-1, 1]) {
-      this.piece(group, '#fff1bd', side * w * 0.32, 0.86, -l / 2 - 0.07, 0.44, 0.2, 0.05);
-      this.piece(group, '#b43831', side * w * 0.32, 0.86, l / 2 + 0.07, 0.48, 0.18, 0.05);
+      this.piece(group, '#fff1bd', side * w * 0.32, 0.86, -l / 2 - 0.07, 0.44, 0.2, 0.05).material=this.lampMaterials[0];
+      this.piece(group, '#b43831', side * w * 0.32, 0.86, l / 2 + 0.07, 0.48, 0.18, 0.05).material=this.lampMaterials[1];
+      for (const [index,end] of [[0,-1],[1,1]]) {
+        const glow = new THREE.Sprite(this.haloMaterials[index]);
+        glow.position.set(side*w*.32,.86,end*(l/2+.13)); glow.scale.setScalar(index===0?1.65:1.35); group.add(glow);
+      }
       this.piece(group, color, side * (w / 2 + 0.1), 1.28, -0.35, 0.22, 0.15, 0.3);
     }
     if (modelIndex === 0) {

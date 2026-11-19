@@ -42,10 +42,19 @@ export class Weapons {
       makeBox(group, dark, [0.13, 0.11, 0.42], [0, 1.39, -0.84]);
       makeBox(group, dark, [0.09, 0.13, 0.15], [0, 1.29, -0.66]);
       if (muzzleFlash) {
-        const flash = new THREE.Mesh(new THREE.SphereGeometry(0.23, 8, 6), new THREE.MeshBasicMaterial({ color: '#ffd86c' }));
-        flash.position.set(0, 1.4, -1.08); group.add(flash);
+        const burst = new THREE.Shape();
+        for (let index=0; index<16; index++) {
+          const angle=index*Math.PI/8; const radius=index%2 ? .09 : (index%4===0?.34:.24);
+          const x=Math.cos(angle)*radius; const y=Math.sin(angle)*radius;
+          if(index===0)burst.moveTo(x,y);else burst.lineTo(x,y);
+        }
+        burst.closePath();
+        const flash = new THREE.Mesh(new THREE.ShapeGeometry(burst), new THREE.MeshBasicMaterial({ color: '#ffbd47', side:THREE.DoubleSide, toneMapped:false }));
+        flash.position.set(0, 1.4, -1.13); group.add(flash);
+        const core = new THREE.Mesh(new THREE.ConeGeometry(.12,.48,5),new THREE.MeshBasicMaterial({color:'#fff4c1',toneMapped:false}));
+        core.rotation.x=-Math.PI/2; core.position.set(0,1.4,-1.23);group.add(core);
         const glow = new THREE.MeshBasicMaterial({ color: '#ffbd47', transparent: true, opacity: 0.88 });
-        const tracer = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 3.5, 6), glow);
+        const tracer = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 3.5, 6), glow);
         tracer.rotation.x = -Math.PI / 2; tracer.position.set(0, 1.4, -2.85); group.add(tracer);
       }
     }
