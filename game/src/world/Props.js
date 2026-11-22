@@ -61,7 +61,7 @@ export class Props {
     const lens=this.batch.material('#f7deb1');lens.emissive.set('#ffbf6c');lens.emissiveIntensity=2;
     const roadX=this.city.roadsX.reduce((a,b)=>Math.abs(a-x)<Math.abs(b-x)?a:b);
     if(Math.abs(roadX-x)<15) {
-      const reflection=reflectedLight('#ffbe70',1.6,8,.3);
+      const reflection=reflectedLight('#ffbe70',2.0,12,.5);
       reflection.position.set(roadX+Math.sign(x-roadX)*7.7,.145,z+dz);this.group.add(reflection);
     }
   }

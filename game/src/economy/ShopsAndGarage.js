@@ -1,7 +1,8 @@
 const UPGRADES = [
-  { id: 'engine', name: 'Engine tune', cost: 650, effect: 'Top speed +8%' },
-  { id: 'armor', name: 'Reinforced panels', cost: 420, effect: 'Vehicle durability +20%' },
-  { id: 'pistol', name: 'Service pistol', cost: 280, effect: 'Pistol +24 rounds' },
+  { id: 'engine', name: 'Engine tune', cost: 250, effect: 'Top speed +8%' },
+  { id: 'armor', name: 'Reinforced panels', cost: 450, effect: 'Vehicle durability +20%' },
+  { id: 'pistol', name: 'Service pistol', cost: 1200, effect: 'Pistol +24 rounds' },
+  { id: 'nitrous', name: 'Nitrous kit', cost: 2500, effect: 'Boost acceleration +25%' },
 ];
 
 export class ShopsAndGarage {
@@ -11,6 +12,7 @@ export class ShopsAndGarage {
     if (this.state.values.money < item.cost) return { ok: false, reason: 'Insufficient funds', item };
     this.state.setMoney(this.state.values.money - item.cost); this.owned.add(id); this.lastPurchase = item.name;
     if (id === 'engine' && this.player.car) this.player.car.spec.topSpeed *= 1.08;
+    if (id === 'nitrous' && this.player.car) this.player.car.spec.acceleration *= 1.25;
     this.state.emit('purchase', item); return { ok: true, item, balance: this.state.values.money };
   }
   catalog() { return UPGRADES.map(item => ({ ...item, owned: this.owned.has(item.id) })); }

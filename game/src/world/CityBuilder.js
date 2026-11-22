@@ -40,7 +40,7 @@ export class CityBuilder {
   }
 
   box(color, x, y, z, w, h, d, shadow = true) {
-    this.batch.add('box', this.batch.material(color, color === '#475356' ? 0.19 : 0.85, color === '#475356' ? 0.28 : 0), [x, y, z], [w, h, d], [0, 0, 0], shadow);
+    this.batch.add('box', this.batch.material(color, color === '#515e61' ? 0.14 : 0.85, color === '#515e61' ? 0.35 : 0), [x, y, z], [w, h, d], [0, 0, 0], shadow);
   }
 
   build() {
@@ -84,7 +84,7 @@ export class CityBuilder {
 
   streetGrid() {
     for (const x of this.roadsX) {
-      this.box('#475356', x, -0.01, 0, this.roadWidth, 0.16, 614, false);
+      this.box('#515e61', x, -0.01, 0, this.roadWidth, 0.16, 614, false);
       for (let z = -300; z < 305; z += 9) {
         const junction = this.roadsZ.some(road => Math.abs(road - z) < 13);
         if (junction) continue;
@@ -94,7 +94,7 @@ export class CityBuilder {
       }
     }
     for (const z of this.roadsZ) {
-      this.box('#475356', 0, 0, z, 451, 0.18, this.roadWidth, false);
+      this.box('#515e61', 0, 0, z, 451, 0.18, this.roadWidth, false);
       for (let x = -224; x < 225; x += 9) {
         if (this.roadsX.some(road => Math.abs(road - x) < 13)) continue;
         this.box('#e6c77a', x, 0.1, z, 4, 0.01, 0.16, false);
@@ -134,7 +134,7 @@ export class CityBuilder {
         const pz = z + bz * 14;
         const tint = new THREE.Color(district.color);
         // Quantized variations retain color variety while sharing instanced materials.
-        tint.offsetHSL(0, 0, (Math.floor(this.random() * 4) - 1.5) * 0.045);
+        tint.offsetHSL(0, 0.07, (Math.floor(this.random() * 4) - 1.5) * 0.045);
         this.building(px, pz, width, height, depth, '#' + tint.getHexString(), district);
       }
     }

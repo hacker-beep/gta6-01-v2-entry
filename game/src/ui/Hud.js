@@ -40,7 +40,8 @@ export class Hud {
     c.strokeStyle='#c0b78f'; c.lineWidth=2;
     for (const x of city.roadsX) {const [px]=xy(x,0);c.beginPath();c.moveTo(px,0);c.lineTo(px,size);c.stroke();}
     for (const z of city.roadsZ) {const [,py]=xy(0,z);c.beginPath();c.moveTo(0,py);c.lineTo(size,py);c.stroke();}
-    if(snapshot.wanted.level) {
+    const showZone = snapshot.wanted.level || snapshot.police?.searchZone;
+    if(showZone) {
       c.beginPath(); c.arc(mid+12,mid-8,71,0,Math.PI*2);
       c.fillStyle='rgba(243,93,66,.25)'; c.fill();
       c.setLineDash([8,5]);c.strokeStyle='#ffab77';c.lineWidth=4;c.stroke();c.setLineDash([]);
@@ -53,7 +54,7 @@ export class Hud {
     c.textAlign='center';c.font='bold 17px system-ui';
     c.fillStyle='#102d34';c.fillRect(103,3,34,24);c.fillStyle='#fff1cc';c.fillText('N',120,22);
     c.fillStyle='#102d34';c.fillRect(17,196,206,28);c.fillStyle='#fff1cc';
-    c.font='bold 14px system-ui';c.fillText(snapshot.wanted.level?'SEARCH ZONE':snapshot.district.name,120,215);
+    c.font='bold 14px system-ui';c.fillText(showZone?'SEARCH ZONE':snapshot.district.name,120,215);
     c.restore();
   }
 
@@ -64,12 +65,12 @@ export class Hud {
     const distance = position => Math.round(Math.hypot(position.x-snapshot.player.x, position.z-snapshot.player.z));
     const names = ['Harbor 12','Cedar 4','North 21','Bay 6','Quay 9'];
     const rows = police.units.map((car,index) => ({ name:names[index], distance:distance(car.position), status:distance(car.position)<16?'INTERCEPT':'CLOSING', color:'#d76551' }));
-    if (police.heli) rows.push({ name:'Air 1', distance:distance(police.heli.root.position), status:'SEARCHLIGHT', color:'#438cb0' });
+    if (police.heli && snapshot.wanted.level) rows.push({ name:'Air 1', distance:distance(police.heli.root.position), status:'SEARCHLIGHT', color:'#438cb0' });
     rows.sort((a,b)=>a.distance-b.distance);
     const message = dispatch.snapshot()[0];
     this.nodes.dispatch.innerHTML=rows.length?`<div style="display:flex;justify-content:space-between;border-bottom:1px solid #69706a;padding-bottom:7px;margin-bottom:5px;letter-spacing:1px"><b>VBPD / DISPATCH</b><span>${rows.length} UNITS</span></div>${rows.map(row=>`<div style="display:grid;grid-template-columns:1fr 36px 106px;gap:6px;align-items:center;margin:5px 0"><b>${row.name}</b><span style="text-align:right">${row.distance} m</span><b style="background:${row.color};padding:2px 4px;text-align:center;font-size:12px;letter-spacing:.3px">${row.status}</b></div>`).join('')}${message?`<div style="font-size:10px;color:#c9c9b6;border-top:1px solid #69706a;padding-top:6px;margin-top:7px">${message.text}</div>`:''}`:'';
     const owned=snapshot.shop.catalog.filter(item=>item.owned);
-    this.nodes.garage.innerHTML=owned.length?`<b>KITE &amp; KEY / MOTOR WORKS</b><br>${owned.map(item=>`✓ ${item.name} / ${item.effect}`).join('<br>')}<br>UPGRADES ${owned.length}/${snapshot.shop.catalog.length}`:'';
+    this.nodes.garage.innerHTML=owned.length?`<b>KITE &amp; KEY / MOTOR WORKS</b>${owned.map(item=>`<div style="display:flex;justify-content:space-between;gap:8px;margin-top:7px"><span>✓ ${item.name}</span><b style="color:#9ce6b4">$${item.cost.toLocaleString()}</b></div><div style="font-size:11px;color:#c9c9b6">${item.effect}</div>`).join('')}<div style="margin-top:8px">UPGRADES ${owned.length}/${snapshot.shop.catalog.length}</div>`:'';
     this.nodes.vehicle.innerHTML=snapshot.player.mode==='driving'?`<b style="color:#f1c573;letter-spacing:1px">${snapshot.vehicleName.toUpperCase()}</b><div><b style="font-size:60px;line-height:1.05;font-variant-numeric:tabular-nums">${Math.round(Math.abs(snapshot.player.speed)*3.6)}</b> <b>km/h</b></div>`:snapshot.district.name;
     const dialogue = mission.dialogue || 'MARA VENN / VERMILION BAY';
     const speaker = dialogue.startsWith('INEZ /') ? 'INEZ' : 'MARA VENN';

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 export class PoliceAI {
   constructor(scene, vehicles, collision, state) {
     this.scene = scene; this.vehicles = vehicles; this.collision = collision; this.state = state;
-    this.units = []; this.heli = null; this.material = new THREE.MeshStandardMaterial({ color: '#e9e1ca', roughness: 0.55 });
+    this.units = []; this.heli = null; this.pinHeli = false; this.searchZone = false; this.material = new THREE.MeshStandardMaterial({ color: '#e9e1ca', roughness: 0.55 });
     this.red = new THREE.MeshStandardMaterial({ color: '#d84c40', emissive: '#9d211a', emissiveIntensity: 1.5 });
     this.blue = new THREE.MeshStandardMaterial({ color: '#4b9fce', emissive: '#174c76', emissiveIntensity: 1.5 });
   }
@@ -24,14 +24,14 @@ export class PoliceAI {
         strut.position.set(x, 8.3, z); root.add(strut);
       }
     }
-    const lamp = new THREE.SpotLight('#fff0b2', 2.5, 75, Math.PI / 7, 0.5, 1.2);
+    const lamp = new THREE.SpotLight('#fff0b2', 6, 75, Math.PI / 7, 0.5, 1.2);
     lamp.position.set(0, 8.4, 1.8); lamp.target.position.set(0, 0, -5); root.add(lamp, lamp.target);
     const rotor = new THREE.Mesh(new THREE.BoxGeometry(8, 0.08, 0.16), this.blue); rotor.position.y = 9.8; root.add(rotor);
     const crossRotor = new THREE.Mesh(rotor.geometry, rotor.material); crossRotor.rotation.y = Math.PI / 2; rotor.add(crossRotor);
-    const beamMaterial = new THREE.MeshStandardMaterial({ color: '#ffe9a6', emissive: '#927637', transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide });
+    const beamMaterial = new THREE.MeshStandardMaterial({ color: '#ffe9a6', emissive: '#c9a94f', emissiveIntensity: 1.6, transparent: true, opacity: 0.34, depthWrite: false, side: THREE.DoubleSide });
     const searchlight = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 20), beamMaterial); searchlight.renderOrder = 1; root.add(searchlight);
     root.scale.setScalar(1.55);
-    this.scene.add(root); return { root, lamp, rotor, searchlight, offset: { x: 12, y: 0, z: -7 } };
+    this.scene.add(root); return { root, lamp, rotor, searchlight, offset: { x: 12, y: 0, z: -7 }, beamWidth: 0.26 };
   }
 
   ensure(level, player) {
@@ -50,7 +50,7 @@ export class PoliceAI {
       const car = this.units.pop(); this.scene.remove(car.group); this.vehicles.cars.splice(this.vehicles.cars.indexOf(car), 1);
     }
     if (level >= 3 && !this.heli) this.heli = this.createHeli();
-    if (level < 3 && this.heli) { this.scene.remove(this.heli.root); this.heli = null; }
+    if (level < 3 && this.heli && !this.pinHeli) { this.scene.remove(this.heli.root); this.heli = null; }
   }
 
   update(dt, level, player) {
@@ -86,10 +86,10 @@ export class PoliceAI {
       if (length > 0.01) {
         beam.position.copy(start).addScaledVector(direction, 0.5);
         beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().negate().normalize());
-        beam.scale.set(length * 0.2, length, length * 0.2);
+        beam.scale.set(length * (this.heli.beamWidth ?? 0.26), length, length * (this.heli.beamWidth ?? 0.26));
       }
     }
   }
 
-  snapshot() { return { patrolCars: this.units.length, helicopter: Boolean(this.heli), roadblocks: this.state.values.wanted >= 3 }; }
+  snapshot() { return { patrolCars: this.units.length, helicopter: Boolean(this.heli), roadblocks: this.state.values.wanted >= 3, searchZone: this.searchZone }; }
 }
