@@ -73,7 +73,7 @@ export class CityBuilder {
     this.box('#c8b998', 0, -0.6, 0, 500, 1, 660, false);
     this.box('#d9c28f', 264, -0.3, 0, 40, 0.8, 680, false);
     const waterMaterial = new THREE.MeshStandardMaterial({
-      color: '#359eaa', roughness: 0.32, metalness: 0.28,
+      color: '#359eaa', roughness: 0.2, metalness: 0.5,
     });
     this.water = new THREE.Mesh(new THREE.PlaneGeometry(2400, 2400), waterMaterial);
     this.water.rotation.x = -Math.PI / 2;
@@ -150,6 +150,26 @@ export class CityBuilder {
     this.collision.addBox(x, z, width, depth, height + 0.8, district.name);
     this.box('#f0dec3', x, height + 0.55, z, width + 0.5, 0.35, depth + 0.5);
     this.box('#a9a59a', x + 1, height + 1.1, z + 1, 2.6, 1, 2);
+    // v4: a few warm lit windows per building at dusk, plus rooftop variety
+    // (second plant box / antenna) so near towers stop reading as clones.
+    // A per-building stream keeps the main random sequence — and the city
+    // layout — identical to v3.
+    const pick = seededRandom((this.buildingCount * 2654435761 + 97) >>> 0);
+    if (!this.litMaterial) {
+      this.litMaterial = new THREE.MeshStandardMaterial({ color: '#ffca7a', emissive: '#ff9a3d', emissiveIntensity: 1.4, roughness: 0.6 });
+    }
+    const litCount = 1 + Math.floor(pick() * 3);
+    for (let i = 0; i < litCount; i++) {
+      const floors = Math.max(1, Math.floor((height - 3.3) / 3.3));
+      const floor = 2.8 + Math.floor(pick() * floors) * 3.3;
+      const side = pick() < 0.5 ? -1 : 1;
+      const along = (pick() - 0.5) * width * 0.6;
+      this.batch.add('box', this.litMaterial, [x + along, floor, z + side * (depth / 2 + 0.03)], [width * 0.16, 1.1, 0.05], [0, 0, 0], false);
+    }
+    if (pick() < 0.5) this.box('#a9a59a', x - width * 0.22, height + 0.95, z - depth * 0.2, 1.8, 0.7, 1.8);
+    if (height > 20 && pick() < 0.6) {
+      this.batch.add('cylinder', this.batch.material('#6b7280'), [x + width * 0.25, height + 2.6, z - depth * 0.2], [0.08, 4.5, 0.08], [0, 0, 0], false);
+    }
     // Recessed-looking window ribbons use a single instanced material.
     const glazing = district.id === 0 ? '#467781' : '#506971';
     for (let floor = 2.8; floor < height - 0.5; floor += 3.3) {

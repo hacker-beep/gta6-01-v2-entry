@@ -137,9 +137,27 @@ export class Screens {
     c.lineWidth = 1;
     for (let gx = 0; gx < W; gx += 28) { c.beginPath(); c.moveTo(gx, 0); c.lineTo(gx, H); c.stroke(); }
     for (let gy = 0; gy < H; gy += 28) { c.beginPath(); c.moveTo(0, gy); c.lineTo(W, gy); c.stroke(); }
-    // The bay: open water east of the city grid.
+    // The bay: open water east of the city grid, with a curved coastline.
     c.fillStyle = '#2b7d8c';
-    c.fillRect(X(252), 0, W - X(252), H);
+    c.beginPath();
+    c.moveTo(X(252), 0);
+    c.quadraticCurveTo(X(240), H * 0.5, X(252), H);
+    c.lineTo(W, H);
+    c.lineTo(W, 0);
+    c.closePath();
+    c.fill();
+    // Wave strokes and a sun-glitter path on the water.
+    c.strokeStyle = 'rgba(255,255,255,.16)';
+    c.lineWidth = 2;
+    for (const [wx, wy, wl] of [[282, 90, 26], [300, 210, 34], [278, 320, 22], [306, 430, 30], [288, 520, 24]]) {
+      c.beginPath(); c.moveTo(X(wx), wy); c.quadraticCurveTo(X(wx) + wl / 2, wy - 5, X(wx) + wl, wy); c.stroke();
+    }
+    c.strokeStyle = 'rgba(255,214,140,.28)';
+    c.lineWidth = 3;
+    for (let i = 0; i < 6; i++) {
+      const gy = H * 0.3 + i * 26;
+      c.beginPath(); c.moveTo(X(288), gy); c.lineTo(X(288) + 26 - i * 2, gy); c.stroke();
+    }
     c.fillStyle = '#7fc9d4';
     c.font = 'italic 600 15px system-ui';
     c.save();
@@ -148,12 +166,16 @@ export class Screens {
     c.textAlign = 'center';
     c.fillText('V E R M I L I O N   B A Y', 0, 0);
     c.restore();
-    c.fillStyle = '#d9c28f';
-    c.fillRect(X(244), 0, X(252) - X(244), H);
+    c.strokeStyle = '#d9c28f';
+    c.lineWidth = X(252) - X(244);
+    c.beginPath();
+    c.moveTo(X(248), 0);
+    c.quadraticCurveTo(X(236), H * 0.5, X(248), H);
+    c.stroke();
     // District blocks, tinted by each district's own color.
     for (const block of city.blocks) {
       c.fillStyle = block.district.color;
-      c.globalAlpha = 0.55;
+      c.globalAlpha = 0.5 + ((block.column + block.row * 3) % 4) * 0.035;
       c.fillRect(X(block.x - 26), Z(block.z - 26), 52 * scale, 52 * scale);
       c.globalAlpha = 1;
       c.strokeStyle = 'rgba(8,18,22,.7)';
@@ -162,13 +184,13 @@ export class Screens {
     }
     // Roads, clipped to the city grid so they never cross the bay strip.
     c.strokeStyle = '#0e1e22';
-    c.lineWidth = 19 * scale;
+    c.lineWidth = 21 * scale;
     for (const x of city.roadsX) { c.beginPath(); c.moveTo(X(x), Z(-310)); c.lineTo(X(x), Z(310)); c.stroke(); }
-    for (const z of city.roadsZ) { c.beginPath(); c.moveTo(X(-260), Z(z)); c.lineTo(X(252), Z(z)); c.stroke(); }
+    for (const z of city.roadsZ) { c.beginPath(); c.moveTo(X(-260), Z(z)); c.lineTo(X(244), Z(z)); c.stroke(); }
     c.strokeStyle = 'rgba(230,199,122,.8)';
     c.lineWidth = 1.5;
     for (const x of city.roadsX) { c.beginPath(); c.moveTo(X(x), Z(-310)); c.lineTo(X(x), Z(310)); c.stroke(); }
-    for (const z of city.roadsZ) { c.beginPath(); c.moveTo(X(-260), Z(z)); c.lineTo(X(252), Z(z)); c.stroke(); }
+    for (const z of city.roadsZ) { c.beginPath(); c.moveTo(X(-260), Z(z)); c.lineTo(X(244), Z(z)); c.stroke(); }
     // District labels at each district's block centroid. Neighbouring
     // centroids sit ~100 px apart, so alternate the label height by id and
     // keep the type small — round 1's full-size centred labels collided.
@@ -196,9 +218,14 @@ export class Screens {
       const rx = nearest(px, city.roadsX);
       const rz = nearest(tz, city.roadsZ);
       const route = [[px, pz], [rx, pz], [rx, rz], [tx, rz], [tx, tz]];
+      c.lineJoin = 'round';
+      c.strokeStyle = '#ffffff';
+      c.lineWidth = 8;
+      c.beginPath();
+      route.forEach(([x, z], i) => (i ? c.lineTo(X(x), Z(z)) : c.moveTo(X(x), Z(z))));
+      c.stroke();
       c.strokeStyle = GOLD;
       c.lineWidth = 4;
-      c.lineJoin = 'round';
       c.shadowColor = GOLD;
       c.shadowBlur = 8;
       c.beginPath();
@@ -210,10 +237,10 @@ export class Screens {
       c.translate(X(tx), Z(tz));
       c.rotate(Math.PI / 4);
       c.fillStyle = '#46d68a';
-      c.fillRect(-7, -7, 14, 14);
+      c.fillRect(-9, -9, 18, 18);
       c.strokeStyle = '#0e1e22';
       c.lineWidth = 2;
-      c.strokeRect(-7, -7, 14, 14);
+      c.strokeRect(-9, -9, 18, 18);
       c.restore();
       c.font = '700 12px system-ui';
       c.textAlign = 'left';
@@ -249,12 +276,17 @@ export class Screens {
     // Player arrow.
     c.save();
     c.translate(X(px), Z(pz));
+    c.beginPath();
+    c.arc(0, 0, 17, 0, Math.PI * 2);
+    c.strokeStyle = 'rgba(255,255,255,.85)';
+    c.lineWidth = 2;
+    c.stroke();
     c.rotate(-(snapshot.player.heading || 0));
     c.beginPath();
-    c.moveTo(0, -12);
-    c.lineTo(8, 9);
-    c.lineTo(0, 5);
-    c.lineTo(-8, 9);
+    c.moveTo(0, -18);
+    c.lineTo(12, 13.5);
+    c.lineTo(0, 7.5);
+    c.lineTo(-12, 13.5);
     c.closePath();
     c.fillStyle = '#fff4b0';
     c.fill();

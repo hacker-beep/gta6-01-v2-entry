@@ -42,20 +42,30 @@ export class Weapons {
       makeBox(group, dark, [0.13, 0.11, 0.42], [0, 1.39, -0.84]);
       makeBox(group, dark, [0.09, 0.13, 0.15], [0, 1.29, -0.66]);
       if (muzzleFlash) {
-        const burst = new THREE.Shape();
-        for (let index=0; index<16; index++) {
-          const angle=index*Math.PI/8; const radius=index%2 ? .09 : (index%4===0?.34:.24);
-          const x=Math.cos(angle)*radius; const y=Math.sin(angle)*radius;
-          if(index===0)burst.moveTo(x,y);else burst.lineTo(x,y);
-        }
-        burst.closePath();
-        const flash = new THREE.Mesh(new THREE.ShapeGeometry(burst), new THREE.MeshBasicMaterial({ color: '#ffbd47', side:THREE.DoubleSide, toneMapped:false }));
-        flash.position.set(0, 1.4, -1.13); group.add(flash);
-        const core = new THREE.Mesh(new THREE.ConeGeometry(.12,.48,5),new THREE.MeshBasicMaterial({color:'#fff4c1',toneMapped:false}));
-        core.rotation.x=-Math.PI/2; core.position.set(0,1.4,-1.23);group.add(core);
-        const glow = new THREE.MeshBasicMaterial({ color: '#ffbd47', transparent: true, opacity: 0.88 });
-        const tracer = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 3.5, 6), glow);
-        tracer.rotation.x = -Math.PI / 2; tracer.position.set(0, 1.4, -2.85); group.add(tracer);
+        // v4: a radial-gradient additive sprite, not a cartoon star burst.
+        const canvas = document.createElement('canvas'); canvas.width = canvas.height = 64;
+        const c = canvas.getContext('2d');
+        const gradient = c.createRadialGradient(32, 32, 0, 32, 32, 32);
+        gradient.addColorStop(0, '#ffffffff'); gradient.addColorStop(0.25, '#ffedb066');
+        gradient.addColorStop(0.6, '#ff9a3d44'); gradient.addColorStop(1, '#ff9a3d00');
+        c.fillStyle = gradient; c.fillRect(0, 0, 64, 64);
+        const flash = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), color: '#ffbd47', blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, toneMapped: false }));
+        flash.scale.set(1.1, 1.1, 1); flash.position.set(0, 1.4, -1.13); group.add(flash);
+        const core = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.55, 5), new THREE.MeshBasicMaterial({ color: '#fff4c1', toneMapped: false }));
+        core.rotation.x = -Math.PI / 2; core.position.set(0, 1.4, -1.28); group.add(core);
+        // Tracer fades along its length: bright at the muzzle, gone at 2 m.
+        const traceCanvas = document.createElement('canvas'); traceCanvas.width = 1; traceCanvas.height = 64;
+        const t = traceCanvas.getContext('2d');
+        const fade = t.createLinearGradient(0, 64, 0, 0);
+        fade.addColorStop(0, '#ffffffff'); fade.addColorStop(1, '#ffffff00');
+        t.fillStyle = fade; t.fillRect(0, 0, 1, 64);
+        const tracer = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.016, 0.016, 2, 6),
+          new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(traceCanvas), color: '#ffbd47', transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }),
+        );
+        tracer.rotation.x = -Math.PI / 2; tracer.position.set(0, 1.4, -2.1); group.add(tracer);
+        const flashLight = new THREE.PointLight('#ffb45e', 20, 8, 1.5);
+        flashLight.position.set(0, 1.4, -1.2); group.add(flashLight);
       }
     }
     group.position.set(x, 0, z); this.scene.add(group); this.enemies.push(enemy); return enemy;

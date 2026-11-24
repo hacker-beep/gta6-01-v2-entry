@@ -12,9 +12,9 @@ export class PoliceAI {
     const root = new THREE.Group(); root.name = 'VBPD air unit';
     // v3: a dark silhouette, not a white box — the staged heli read as a
     // placeholder at capture scale. Dark slate body, dark rotor + blur disc.
-    const hull = new THREE.MeshStandardMaterial({ color: '#2c3942', roughness: 0.55, metalness: 0.25 });
+    const hull = new THREE.MeshStandardMaterial({ color: '#3a4a55', roughness: 0.55, metalness: 0.25, emissive: '#3a2a18', emissiveIntensity: 0.35 });
     const body = new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.25, 4.4), hull); body.position.y = 9; root.add(body);
-    const cockpit = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.88, 1.65), new THREE.MeshStandardMaterial({ color: '#1a2e35', emissive: '#0d1a1e', metalness: 0.4, roughness: 0.3 }));
+    const cockpit = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.88, 1.65), new THREE.MeshStandardMaterial({ color: '#7d6f5e', emissive: '#2a1c10', emissiveIntensity: 0.6, metalness: 0.5, roughness: 0.3 }));
     cockpit.position.set(0, 9.05, 1.42); root.add(cockpit);
     const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 4.1, 8), hull); tail.rotation.x = Math.PI / 2; tail.position.set(0, 9.08, -3.65); root.add(tail);
     const fin = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.15, 0.72), hull); fin.position.set(0, 9.5, -5.38); root.add(fin);
@@ -32,12 +32,26 @@ export class PoliceAI {
     const rotorMaterial = new THREE.MeshStandardMaterial({ color: '#141d22', roughness: 0.6 });
     const rotor = new THREE.Mesh(new THREE.BoxGeometry(8, 0.08, 0.16), rotorMaterial); rotor.position.y = 9.8; root.add(rotor);
     const crossRotor = new THREE.Mesh(rotor.geometry, rotor.material); crossRotor.rotation.y = Math.PI / 2; rotor.add(crossRotor);
-    const disc = new THREE.Mesh(new THREE.CircleGeometry(4.1, 28), new THREE.MeshBasicMaterial({ color: '#141d22', transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false }));
+    const discCanvas = document.createElement('canvas'); discCanvas.width = discCanvas.height = 128;
+    const dc = discCanvas.getContext('2d');
+    const discGradient = dc.createRadialGradient(64, 64, 0, 64, 64, 64);
+    discGradient.addColorStop(0, '#ffffff'); discGradient.addColorStop(0.75, '#ffffff'); discGradient.addColorStop(1, '#ffffff00');
+    dc.fillStyle = discGradient; dc.fillRect(0, 0, 128, 128);
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(4.1, 28), new THREE.MeshBasicMaterial({ color: '#141d22', transparent: true, opacity: 0.22, alphaMap: new THREE.CanvasTexture(discCanvas), side: THREE.DoubleSide, depthWrite: false }));
     disc.rotation.x = -Math.PI / 2; disc.position.y = 9.82; root.add(disc);
     const beamMaterial = new THREE.MeshStandardMaterial({ color: '#ffe9a6', emissive: '#c9a94f', emissiveIntensity: 1.6, transparent: true, opacity: 0.34, depthWrite: false, side: THREE.DoubleSide });
     const searchlight = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 20), beamMaterial); searchlight.renderOrder = 1; root.add(searchlight);
+    // v4: a soft pool of light where the beam lands, so the cone's hard
+    // base edge dissolves into the road instead of drawing a line.
+    const poolCanvas = document.createElement('canvas'); poolCanvas.width = poolCanvas.height = 128;
+    const pc = poolCanvas.getContext('2d');
+    const poolGradient = pc.createRadialGradient(64, 64, 0, 64, 64, 64);
+    poolGradient.addColorStop(0, '#ffffffff'); poolGradient.addColorStop(0.5, '#ffffff88'); poolGradient.addColorStop(1, '#ffffff00');
+    pc.fillStyle = poolGradient; pc.fillRect(0, 0, 128, 128);
+    const groundPool = new THREE.Mesh(new THREE.CircleGeometry(3.8, 28), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(poolCanvas), color: '#ffedb8', transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
+    groundPool.rotation.x = -Math.PI / 2; groundPool.renderOrder = 2; root.add(groundPool);
     root.scale.setScalar(1.55);
-    this.scene.add(root); return { root, lamp, rotor, searchlight, offset: { x: 12, y: 0, z: -7 }, beamWidth: 0.26 };
+    this.scene.add(root); return { root, lamp, rotor, searchlight, groundPool, offset: { x: 12, y: 0, z: -7 }, beamWidth: 0.26 };
   }
 
   ensure(level, player) {
@@ -85,6 +99,9 @@ export class PoliceAI {
       const target = player.target.clone();
       root.worldToLocal(target);
       this.heli.lamp.target.position.copy(target);
+      const groundPoint = player.target.clone(); groundPoint.y = 0.14;
+      this.heli.groundPool.position.copy(root.worldToLocal(groundPoint));
+      this.heli.groundPool.visible = this.heli.searchlight.visible;
       const beam = this.heli.searchlight;
       const start = this.heli.lamp.position;
       const direction = this.heli.lamp.target.position.clone().sub(start);

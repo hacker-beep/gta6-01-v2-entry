@@ -7,7 +7,7 @@ import { reflectedLight } from '../render/RoadSheen.js';
 const STAGES = {
   coverHeliChase: { x: 66, z: -72, hour: 17.2, money: 86250, respect: 2, wanted: 3, mission: 2, driving: true, health: 79, ammo: 19, heli: true, heading: -0.15, speed: 34 },
   driveCarjacking: { x: -72, z: 72, hour: 17.3, money: 92300, respect: 4, wanted: 1, mission: 5, driving: true, health: 92, ammo: 22, heading: -0.12, speed: 38.5 },
-  onFootCombat: { x: 0, z: 0, hour: 17.1, money: 104750, respect: 6, wanted: 2, mission: 11, driving: false, health: 61, ammo: 14, enemies: true, camera: { heading: -0.3, pitch: 0, distance: 0.65 } },
+  onFootCombat: { x: 0, z: 0, hour: 17.1, money: 104750, respect: 6, wanted: 2, mission: 11, driving: false, health: 61, ammo: 14, enemies: true, camera: { heading: -0.3, pitch: -0.05, distance: 0.65 } },
   garageEconomy: { x: -72, z: 216, hour: 17.4, money: 128900, respect: 10, wanted: 0, mission: 14, driving: false, health: 100, ammo: 24, garage: true, heading: -Math.PI / 2, camera: { heading: -Math.PI / 2, pitch: 0.14, distance: 0.8 } },
   // v3: the two completeness shots. The map pauses mid-career (8 jobs done);
   // the title shot stages the same career so its save slots line up.
@@ -47,8 +47,8 @@ const STAGED_TRAFFIC = {
     { x: -40, z: 0, heading: Math.PI / 2, model: 1 }, { x: -104, z: 0, heading: -Math.PI / 2, model: 3 },
   ],
   onFootCombat: [
-    { x: 5, z: -26, heading: -0.1, model: 1 }, { x: -5, z: -42, heading: 0.1, model: 2 },
-    { x: -20, z: -72, heading: Math.PI / 2, model: 0 }, { x: 16, z: -72, heading: -Math.PI / 2, model: 3 },
+    { x: 5, z: -20, heading: -0.1, model: 1 }, { x: -5, z: -32, heading: 0.1, model: 2 },
+    { x: -18, z: -58, heading: Math.PI / 2, model: 0 }, { x: 12, z: -52, heading: -Math.PI / 2, model: 3 },
   ],
   garageEconomy: [
     { x: -40, z: 212, heading: -Math.PI / 2, model: 1 }, { x: -10, z: 220, heading: Math.PI / 2, model: 2 },
@@ -66,8 +66,12 @@ export function createShotScenes(app) {
   const stage = name => {
     const config = STAGES[name]; if (!config) throw Error(`Unknown ShotScene: ${name}`);
     const { state, player, vehicles, systems } = app;
+    // v4: a tighter shadow frustum for staged shots, so ground shadows read
+    // instead of dissolving into 8 cm texels at golden hour.
+    app.sky.setShadowCoverage(60);
     app.vehicleFire?.dispose(app.scene); app.vehicleFire = null;
     if (app.sunGlare) { app.scene.remove(app.sunGlare); app.sunGlare = null; }
+    if (app.titleGlints) { for (const glint of app.titleGlints) app.scene.remove(glint); app.titleGlints = null; }
     if (app.burnedCar) {
       app.scene.remove(app.burnedCar.group);
       vehicles.cars.splice(vehicles.cars.indexOf(app.burnedCar), 1); app.burnedCar = null;
@@ -86,12 +90,12 @@ export function createShotScenes(app) {
     systems.missions.start(config.mission); systems.weapons.health = config.health; systems.weapons.ammo = config.ammo;
     systems.weapons.enemies.forEach(enemy => app.scene.remove(enemy.group)); systems.weapons.enemies.length = 0;
     if (config.enemies) {
-      systems.weapons.spawnEnemy(config.x + 4.2, config.z - 6.5, 3, { aimAt: player.target, muzzleFlash: true });
-      systems.weapons.spawnEnemy(config.x - 4.2, config.z - 7.5, 2, { aimAt: player.target });
+      systems.weapons.spawnEnemy(config.x + 4.2, config.z - 4.5, 3, { aimAt: player.target, muzzleFlash: true });
+      systems.weapons.spawnEnemy(config.x - 2.0, config.z - 5.5, 2, { aimAt: player.target });
     }
     if (config.enemies) {
-      app.burnedCar = vehicles.spawn(config.x + 7.5, config.z - 13.5, -0.65, { model: 0, color: '#302c29' });
-      app.vehicleFire = new VehicleFire(app.scene, config.x + 7.5, config.z - 14.5);
+      app.burnedCar = vehicles.spawn(config.x + 7.5, config.z - 10.5, -0.65, { model: 0, color: '#4a4038' });
+      app.vehicleFire = new VehicleFire(app.scene, config.x + 7.5, config.z - 11.5);
     }
     if (config.driving) {
       let car = player.car;
@@ -103,6 +107,13 @@ export function createShotScenes(app) {
         car.sunGlare = reflectedLight('#ff9a4d', 7, 55, 0.2);
         car.sunGlare.position.set(0, 0.02, -30);
         car.group.add(car.sunGlare);
+      }
+      // v4: a second, wider, fainter streak further ahead, so the wet gloss
+      // is not confined to the asphalt directly under the car.
+      if (!car.sunGlare2) {
+        car.sunGlare2 = reflectedLight('#ff9a4d', 12, 70, 0.1);
+        car.sunGlare2.position.set(0, 0.02, -85);
+        car.group.add(car.sunGlare2);
       }
     } else if (player.car) {
       const car = player.car; vehicles.release(car); player.car = null; player.avatar.visible = true; player.position.set(config.x, 0.32, config.z); player.avatar.position.copy(player.position);
@@ -149,9 +160,12 @@ export function createShotScenes(app) {
       }
     }
     if (name === 'onFootCombat') {
-      // Far and high: at the round-2 offset the level camera caught the
-      // rotor disc as a giant black mass across the top of the frame.
-      stageHeli(1.4, { x: -2, y: 6, z: -55 }, 0.9, 0.12, 0.16, false);
+      // v4: tight foot camera — closer, tilted up — so the dead foreground
+      // road leaves the frame and the player fills it.
+      app.chase.setModeSettings('foot', { distance: 5.5, aimHeight: 1.0 });
+      // v4: no heli in this shot. At the tight foot camera the rotor disc
+      // spans half the vertical frame and always clips at the top edge;
+      // the air unit stays in the dispatch feed instead.
       app.sunGlare = reflectedLight('#ff9a4d', 7, 55, 0.2);
       app.sunGlare.position.set(0, 0.12, -35);
       app.scene.add(app.sunGlare);
@@ -199,6 +213,14 @@ export function createShotScenes(app) {
       // Dusk vista: high over the central boulevard, looking north into the
       // sunset so the skyline reads behind the title. Paused so the manual
       // camera pose survives the capture settle.
+      // v4: a long warm streak down the boulevard and a sun-glitter streak
+      // on the bay water, so the dusk vista reads wet and lit, not flat.
+      const boulevard = reflectedLight('#ff9a4d', 5, 300, 0.12);
+      boulevard.position.set(0, 0.12, 0);
+      const glitter = reflectedLight('#ffd27a', 10, 140, 0.35);
+      glitter.position.set(280, -0.4, -100);
+      app.titleGlints = [boulevard, glitter];
+      app.scene.add(boulevard, glitter);
       app.camera.position.set(0, 42, 240);
       app.camera.lookAt(0, 6, -240);
       app.camera.fov = 55;

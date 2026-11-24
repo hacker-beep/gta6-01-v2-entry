@@ -40,11 +40,16 @@ export class Props {
       const angle = rotation + frond * Math.PI * 2 / 7;
       const cx = x + Math.cos(angle) * 1.6;
       const cz = z + Math.sin(angle) * 1.6;
+      // v4: fronds droop and end in a darker tip segment, so palms read as
+      // curved leaves with shaded undersides instead of flat paper cutouts.
       this.batch.add('box', this.material(frond % 2 ? '#4d7956' : '#648c57'),
-        [cx, height + 0.2, cz], [4.5, 0.18, 0.85], [0, -angle, -0.19]);
-      this.batch.add('cone', this.material('#688953'),
+        [cx, height + 0.2, cz], [3.9, 0.18, 0.85], [0, -angle, -0.32]);
+      this.batch.add('box', this.material('#3d6248'),
+        [x + Math.cos(angle) * 3.6, height - 0.35, z + Math.sin(angle) * 3.6],
+        [1.8, 0.15, 0.7], [0, -angle, -0.75]);
+      this.batch.add('cone', this.material('#5d7a4a'),
         [x + Math.cos(angle) * 3.2, height - 0.4, z + Math.sin(angle) * 3.2],
-        [1.05, 2.6, 0.2], [0, -angle, 1.08]);
+        [1.05, 2.6, 0.2], [0, -angle, 1.25]);
     }
     this.pole('#67774c', x, height + 0.2, z, 0.8, 0.8);
     this.collision.addBox(x, z, 0.5, 0.5, height, 'palm trunk');

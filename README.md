@@ -4,9 +4,12 @@
 [![Live rank](https://make.fun/badge/gta6-01/hacker-beep/gta6-01-v2-entry/rank.svg)](https://make.fun/competitions/gta6-01)
 [![Live reward](https://make.fun/badge/gta6-01/hacker-beep/gta6-01-v2-entry/reward.svg)](https://make.fun/competitions/gta6-01)
 
-An original three.js coastal city scaffold for make.fun's “Make GTA 6” competition.
-Phase one delivers the playable world and movement foundation. No title screen:
-Mara Venn begins beside a red Marlin GT on a golden-hour boulevard.
+An original three.js open-world crime game for make.fun's “Make GTA 6” competition.
+Mara Venn works the coast of Vermilion Bay: fourteen districts, police chases with
+an air unit, pistol combat, fifteen story missions, an economy with garages and
+upgrades, radio, a minimap, a map pause screen, and a title screen with career
+save slots. Four staged screenshots in `screenshots/` show the chase, the map,
+the combat, and the title.
 
 ## Run offline
 
@@ -45,13 +48,30 @@ carry over as design; source code is freshly authored for this entry.
 - `vehicles/Carjacking.js`: original procedural cars, handling and door checks.
 - `traffic/TrafficAI.js`: lane circuits, corner slowing and front-obstacle braking.
 - `people/Pedestrians.js`: articulated walkers following sidewalk perimeters.
+- `police/WantedSystem.js`: heat, wanted levels and crime escalation.
+- `police/PoliceDispatch.js`: radio chatter and dispatch messages.
+- `police/PoliceAI.js`: patrol cars, roadblocks, helicopter and searchlight.
+- `missions/MissionDirector.js`: fifteen story jobs with objectives and ratings.
+- `combat/Weapons.js`: pistol combat, enemy guards, muzzle flashes and tracers.
+- `economy/ShopsAndGarage.js`: upgrades, garages and vehicle purchases.
+- `economy/Reputation.js`: respect tiers and district standing.
+- `ui/Hud.js`: health, ammo, money, wanted stars and dispatch feed.
+- `ui/Minimap.js`: live district minimap with the player arrow and job target.
+- `ui/Menus.js`: pause menu and settings.
+- `ui/Screens.js`: map pause screen and title screen with career save slots.
+- `audio/AudioEngine.js`: procedural radio and sound effects.
+- `audio/RadioSynth.js`: synthesized Bay FM station audio.
+- `render/VehicleFire.js`: procedural flame and smoke for burning cars.
+- `render/RoadSheen.js`: wet-asphalt light streak decals.
+- `shots/ShotScenes.js`: the four staged capture scenes (chase, map, combat, title).
+- `core/SaveGame.js`: career save slots.
 
 Static furniture and buildings are instanced. Moving actors use shared geometry
 and materials. Physics advances at 60 Hz with bounded catch-up. Traffic yields
 to other cars and the on-foot player. Collision is deliberately approximate:
 vehicles use circular footprints and pedestrians are ambient sidewalk actors.
 
-## Phase-two integration
+## Shipped systems and debug bridge
 
 The browser exposes `window.game` after `vermilion-ready`. The primary bridge is
 `game.state`; convenience methods also live directly on `game`:
@@ -67,23 +87,27 @@ game.spawnPoliceChase({ count: 4, helicopter: true, level: 5 });
 game.snapshot();
 ```
 
-Money, respect and wanted are data hooks only. `spawnPoliceChase` queues a request,
-emits `police-chase-request`, and reports `implemented: false`. Future police
-code can consume the request with `game.state.consumeChaseRequest()` or subscribe
-with `game.state.on(eventName, callback)`, which returns an unsubscribe function.
-Teleporting preserves the current on-foot/driving mode and finds safe nearby
-ground. Hours wrap within 0–24; `?hour=12&seed=3535377` selects a daytime seed.
-The clock defaults to a held golden hour, not an accelerated day/night cycle.
+Money, respect and wanted drive live systems: the wanted level spawns patrol cars
+and the VBPD air unit (`police/PoliceAI.js`), dispatch radio narrates the chase
+(`police/PoliceDispatch.js`), and the HUD shows heat, health, ammo and the
+dispatch feed. `spawnPoliceChase` queues a chase request through the state bridge
+(the legacy bridge still reports `implemented: false`; the live police system is
+`PoliceAI`, driven by the wanted level). Teleporting preserves the current
+on-foot/driving mode and finds safe nearby ground. Hours wrap within 0–24;
+`?hour=12&seed=3535377` selects a daytime seed. The clock defaults to a held
+golden hour, not an accelerated day/night cycle.
 
 `game.pause(true)` and `game.step(60)` permit deterministic simulation inspection.
 `game.state.setTrafficEnabled(false)` freezes ambient traffic. Debug handles to
 vehicles, collision, and the player remain available for development.
 
-HUD panels are empty DOM containers. Police, wanted behavior, helicopters,
-weapons/combat, missions, economy, garages, audio, ShotScenes, and submission
-screenshots are intentionally reserved for phases two and three. `shots.json`
-reserves four future shot names; its queries do not stage scenes yet.
-`screenshots/` contains only a hidden directory marker.
+Shipped systems: police chases with helicopter and searchlight, wanted levels,
+pistol combat against Rook crew guards, fifteen story missions with ratings, an
+economy with shops, garages and upgrades, respect tiers, procedural radio audio,
+a live minimap, a map pause screen with career stats and save slots, and a title
+screen. `shots.json` lists the four staged capture scenes; `shots/ShotScenes.js`
+stages each one (chase, map, combat, title) and `screenshots/` holds the four
+rendered frames.
 
 ## Verification and submission protocol
 
@@ -94,10 +118,12 @@ checks rendering, offline requests, car entry/driving/braking/exit, walking,
 collision and the state hooks. Diagnostics go under ignored `.verify/` and are
 not competition screenshots. The checker uses the required sandbox/GPU/shm flags.
 
-`MAKEFUN_OUTPUT_DIR=out node main.ts` exports the static game and screenshots,
-then builds the canonical dossier using the untouched kit helper. This phase
-intentionally cannot complete that export until genuine screenshots exist:
-the kit rejects an empty screenshot directory. No placeholder renders are shipped.
+`node scripts/take-screenshots.mjs` renders the four staged screenshots into
+`screenshots/` (1280×720 JPEG, one per `shots.json` entry) using a local
+Playwright Chromium against `serve.ts` on :8088. `MAKEFUN_OUTPUT_DIR=out node
+main.ts` exports the static game and screenshots, then builds the canonical
+dossier using the untouched kit helper. The export requires the four genuine
+screenshots; no placeholder renders are shipped.
 
 ## Attribution
 

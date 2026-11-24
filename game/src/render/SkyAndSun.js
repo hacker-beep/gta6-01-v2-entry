@@ -19,8 +19,8 @@ const SKY_FRAGMENT = `
     float altitude = max(0.0, direction.y);
     vec3 color = mix(horizon, zenith, pow(altitude, 0.55));
     float alignment = max(0.0, dot(direction, sunDirection));
-    float glow = pow(alignment, 24.0) * 0.5;
-    float disc = smoothstep(0.9992, 0.9997, alignment);
+    float glow = pow(alignment, 24.0) * 0.5 + pow(alignment, 8.0) * 0.35;
+    float disc = smoothstep(0.9990, 0.9997, alignment);
     color += solarColor * (glow + disc * 2.0);
     gl_FragColor = vec4(color, 1.0);
     #include <tonemapping_fragment>
@@ -96,7 +96,7 @@ export class SkyAndSun {
     this.uniforms.solarColor.value.set(golden > 0.5 ? '#ffd27a' : '#fff8dc');
     this.sun.color.set('#fff4d9').lerp(new THREE.Color('#ff9a3d'), golden);
     this.sun.intensity = daylight * (3.0 + golden * 1.0);
-    this.ambient.intensity = 0.6 + daylight * 2.3;
+    this.ambient.intensity = (0.6 + daylight * 2.3) * (1 - golden * 0.35);
     this.ambient.color.set('#9bbdca').lerp(new THREE.Color('#d6bba0'), golden * 0.6);
     this.ambient.groundColor.set('#c49a6b');
     this.scene.fog.color.copy(this.uniforms.horizon.value);
