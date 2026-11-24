@@ -20,6 +20,7 @@ import { Reputation } from './economy/Reputation.js';
 import { Hud } from './ui/Hud.js';
 import { Minimap } from './ui/Minimap.js';
 import { Menus } from './ui/Menus.js';
+import { Screens } from './ui/Screens.js';
 import { SaveGame } from './core/SaveGame.js';
 import { AudioEngine } from './audio/AudioEngine.js';
 import { createShotScenes } from './shots/ShotScenes.js';
@@ -96,6 +97,7 @@ class VermilionBay {
       hud: new Hud(), minimap: new Minimap(), audio: new AudioEngine(),
     };
     this.menus = new Menus(value => this.setPaused(value));
+    this.screens = new Screens();
     this.systems.save = new SaveGame(this.state, this.systems.missions, this.systems.shops, this.systems.reputation);
     this.state.wantedSystem = this.systems.wanted;
     this.state.attachSystems(this.systems);

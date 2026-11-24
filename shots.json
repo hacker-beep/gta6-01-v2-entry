@@ -1,6 +1,1 @@
-[
-  { "name": "1-cover.jpg", "query": "?scene=coverHeliChase&seed=3535377" },
-  { "name": "2-drive.jpg", "query": "?scene=driveCarjacking&seed=3535377" },
-  { "name": "3-combat.jpg", "query": "?scene=onFootCombat&seed=3535377" },
-  { "name": "4-garage.jpg", "query": "?scene=garageEconomy&seed=3535377" }
-]
+[{"name":"1-cover.jpg","query":"?scene=coverHeliChase&seed=3535377"},{"name":"2-map.jpg","query":"?scene=cityMapPause&seed=3535377"},{"name":"3-combat.jpg","query":"?scene=onFootCombat&seed=3535377"},{"name":"4-title.jpg","query":"?scene=titleScreen&seed=3535377"}]

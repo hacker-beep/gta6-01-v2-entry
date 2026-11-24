@@ -10,24 +10,30 @@ export class PoliceAI {
 
   createHeli() {
     const root = new THREE.Group(); root.name = 'VBPD air unit';
-    const body = new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.25, 4.4), this.material); body.position.y = 9; root.add(body);
-    const cockpit = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.88, 1.65), new THREE.MeshStandardMaterial({ color: '#29434b', emissive: '#13292e', metalness: 0.2, roughness: 0.36 }));
+    // v3: a dark silhouette, not a white box — the staged heli read as a
+    // placeholder at capture scale. Dark slate body, dark rotor + blur disc.
+    const hull = new THREE.MeshStandardMaterial({ color: '#2c3942', roughness: 0.55, metalness: 0.25 });
+    const body = new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.25, 4.4), hull); body.position.y = 9; root.add(body);
+    const cockpit = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.88, 1.65), new THREE.MeshStandardMaterial({ color: '#1a2e35', emissive: '#0d1a1e', metalness: 0.4, roughness: 0.3 }));
     cockpit.position.set(0, 9.05, 1.42); root.add(cockpit);
-    const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 4.1, 8), this.material); tail.rotation.x = Math.PI / 2; tail.position.set(0, 9.08, -3.65); root.add(tail);
-    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.15, 0.72), this.material); fin.position.set(0, 9.5, -5.38); root.add(fin);
-    const stabilizer = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.12, 0.7), this.material); stabilizer.position.set(0, 9.05, -5.05); root.add(stabilizer);
+    const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 4.1, 8), hull); tail.rotation.x = Math.PI / 2; tail.position.set(0, 9.08, -3.65); root.add(tail);
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.15, 0.72), hull); fin.position.set(0, 9.5, -5.38); root.add(fin);
+    const stabilizer = new THREE.Mesh(new THREE.BoxGeometry(2.25, 0.12, 0.7), hull); stabilizer.position.set(0, 9.05, -5.05); root.add(stabilizer);
     for (const x of [-1.25, 1.25]) {
-      const skid = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 4.8, 6), this.material);
+      const skid = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 4.8, 6), hull);
       skid.rotation.x = Math.PI / 2; skid.position.set(x, 7.95, 0.1); root.add(skid);
       for (const z of [-1, 1]) {
-        const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.8, 6), this.material);
+        const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.8, 6), hull);
         strut.position.set(x, 8.3, z); root.add(strut);
       }
     }
     const lamp = new THREE.SpotLight('#fff0b2', 6, 75, Math.PI / 7, 0.5, 1.2);
     lamp.position.set(0, 8.4, 1.8); lamp.target.position.set(0, 0, -5); root.add(lamp, lamp.target);
-    const rotor = new THREE.Mesh(new THREE.BoxGeometry(8, 0.08, 0.16), this.blue); rotor.position.y = 9.8; root.add(rotor);
+    const rotorMaterial = new THREE.MeshStandardMaterial({ color: '#141d22', roughness: 0.6 });
+    const rotor = new THREE.Mesh(new THREE.BoxGeometry(8, 0.08, 0.16), rotorMaterial); rotor.position.y = 9.8; root.add(rotor);
     const crossRotor = new THREE.Mesh(rotor.geometry, rotor.material); crossRotor.rotation.y = Math.PI / 2; rotor.add(crossRotor);
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(4.1, 28), new THREE.MeshBasicMaterial({ color: '#141d22', transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false }));
+    disc.rotation.x = -Math.PI / 2; disc.position.y = 9.82; root.add(disc);
     const beamMaterial = new THREE.MeshStandardMaterial({ color: '#ffe9a6', emissive: '#c9a94f', emissiveIntensity: 1.6, transparent: true, opacity: 0.34, depthWrite: false, side: THREE.DoubleSide });
     const searchlight = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 20), beamMaterial); searchlight.renderOrder = 1; root.add(searchlight);
     root.scale.setScalar(1.55);

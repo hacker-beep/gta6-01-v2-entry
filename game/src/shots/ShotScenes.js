@@ -7,9 +7,22 @@ import { reflectedLight } from '../render/RoadSheen.js';
 const STAGES = {
   coverHeliChase: { x: 66, z: -72, hour: 17.2, money: 86250, respect: 2, wanted: 3, mission: 2, driving: true, health: 79, ammo: 19, heli: true, heading: -0.15, speed: 34 },
   driveCarjacking: { x: -72, z: 72, hour: 17.3, money: 92300, respect: 4, wanted: 1, mission: 5, driving: true, health: 92, ammo: 22, heading: -0.12, speed: 38.5 },
-  onFootCombat: { x: 0, z: 0, hour: 17.1, money: 104750, respect: 6, wanted: 2, mission: 11, driving: false, health: 61, ammo: 14, enemies: true, camera: { heading: -0.3, pitch: 0.18, distance: 0.8 } },
+  onFootCombat: { x: 0, z: 0, hour: 17.1, money: 104750, respect: 6, wanted: 2, mission: 11, driving: false, health: 61, ammo: 14, enemies: true, camera: { heading: -0.3, pitch: 0, distance: 0.65 } },
   garageEconomy: { x: -72, z: 216, hour: 17.4, money: 128900, respect: 10, wanted: 0, mission: 14, driving: false, health: 100, ammo: 24, garage: true, heading: -Math.PI / 2, camera: { heading: -Math.PI / 2, pitch: 0.14, distance: 0.8 } },
+  // v3: the two completeness shots. The map pauses mid-career (8 jobs done);
+  // the title shot stages the same career so its save slots line up.
+  cityMapPause: { x: 0, z: 36, hour: 17.4, money: 96400, respect: 5, wanted: 1, mission: 8, driving: false, health: 88, ammo: 22, map: true },
+  titleScreen: { x: 0, z: 180, hour: 17.5, money: 104750, respect: 6, wanted: 0, mission: 11, driving: false, health: 100, ammo: 24, title: true },
 };
+
+// Staged mid-career numbers for the map screen (same staging convention as
+// the money/respect arc in STAGES): a career 8 jobs in, not a fresh save.
+const CAREER = { jobsDone: 8, districtsFriendly: 5, upgrades: 4, carsTaken: 23, evasions: 9, kmDriven: 148.6, takedowns: 31, completion: 57 };
+const SLOTS = [
+  { n: 1, pct: 57, mission: 'Breakwater', act: 'ACT II', district: 'Saltworks', jobs: '8 jobs', money: 96400, time: '17:24' },
+  { n: 2, pct: 31, mission: 'Quay Change', act: 'ACT I', district: 'South Current', jobs: '5 jobs', money: 48200, time: '12:08' },
+  { empty: true },
+];
 
 // Sidewalk spots in frame at capture time (the staged car travels ~40 m
 // during the settle, so spots sit ahead of the stage position).
@@ -18,6 +31,8 @@ const CROWD_SPOTS = {
   driveCarjacking: [[-60, 20], [-84, 18], [-60, 5], [-84, 2], [-60, -10], [-84, -12]],
   onFootCombat: [[-11, -12], [11, -14], [-11, -25], [11, -28], [-12, -40], [12, -38]],
   garageEconomy: [[-55, 205], [-40, 227], [-25, 205], [-5, 227], [15, 205], [35, 227]],
+  cityMapPause: [],
+  titleScreen: [[12, 200], [-12, 160], [12, 120], [-12, 80], [12, 40], [-12, 0]],
 };
 
 // Extra traffic in frame at capture. Parked/ownerless cars hold still, so
@@ -38,6 +53,12 @@ const STAGED_TRAFFIC = {
   garageEconomy: [
     { x: -40, z: 212, heading: -Math.PI / 2, model: 1 }, { x: -10, z: 220, heading: Math.PI / 2, model: 2 },
     { x: 25, z: 211, heading: -Math.PI / 2, model: 0 }, { x: 55, z: 219, heading: Math.PI / 2, model: 3 },
+  ],
+  cityMapPause: [],
+  // Parked cars down the title vista's boulevard so the dusk shot has life.
+  titleScreen: [
+    { x: 4, z: 120, heading: 0, model: 1 }, { x: -4, z: 60, heading: Math.PI, model: 2 },
+    { x: 4, z: -20, heading: 0, model: 3 }, { x: -4, z: -100, heading: Math.PI, model: 0 },
   ],
 };
 
@@ -69,8 +90,8 @@ export function createShotScenes(app) {
       systems.weapons.spawnEnemy(config.x - 4.2, config.z - 7.5, 2, { aimAt: player.target });
     }
     if (config.enemies) {
-      app.burnedCar = vehicles.spawn(config.x + 7.5, config.z - 17, -0.65, { model: 0, color: '#302c29' });
-      app.vehicleFire = new VehicleFire(app.scene, config.x + 7.5, config.z - 18);
+      app.burnedCar = vehicles.spawn(config.x + 7.5, config.z - 13.5, -0.65, { model: 0, color: '#302c29' });
+      app.vehicleFire = new VehicleFire(app.scene, config.x + 7.5, config.z - 14.5);
     }
     if (config.driving) {
       let car = player.car;
@@ -102,7 +123,9 @@ export function createShotScenes(app) {
       systems.wanted.commitCrime(3); systems.wanted.setLevel(3);
       systems.dispatch.messages = [{ callsign: 'Harbor 12', text: 'Air unit has a visual. Road control ahead. All units converge.', district: state.city.districtAt(config.x,config.z).name, age: 0 }];
       systems.police.ensure(3, player);
-      stageHeli(2.8, { x: 2, y: -13.5, z: -15 }, 0.65);
+      // v3: the heli was a giant white box at scale 2.8. Smaller, darker,
+      // further ahead, with a wider searchlight cone.
+      stageHeli(1.5, { x: 3, y: 0.5, z: -24 }, 0.65, 0.26);
       const pursuit = systems.police.units[0];
       pursuit.position.set(player.target.x + Math.sin(player.facing) * 8, 0.12, player.target.z + Math.cos(player.facing) * 8);
       pursuit.heading = player.facing; pursuit.shotPursuitSpeed = 33; app.vehicles.animate(pursuit, 0);
@@ -116,7 +139,7 @@ export function createShotScenes(app) {
     }
     if (name === 'driveCarjacking') {
       systems.police.ensure(config.wanted, player);
-      stageHeli(2.6, { x: -2, y: -12, z: -18 }, 0.5, 0.22);
+      stageHeli(1.5, { x: -3, y: 0.5, z: -26 }, 0.5, 0.3);
       const pursuit = systems.police.units[0];
       pursuit.position.set(player.target.x + Math.sin(player.facing) * 9, 0.12, player.target.z + Math.cos(player.facing) * 9);
       pursuit.heading = player.facing; pursuit.shotPursuitSpeed = 37; app.vehicles.animate(pursuit, 0);
@@ -126,7 +149,9 @@ export function createShotScenes(app) {
       }
     }
     if (name === 'onFootCombat') {
-      stageHeli(2.6, { x: -2, y: -16.9, z: -25 }, 0.9, 0.12, 0.16, false);
+      // Far and high: at the round-2 offset the level camera caught the
+      // rotor disc as a giant black mass across the top of the frame.
+      stageHeli(1.4, { x: -2, y: 6, z: -55 }, 0.9, 0.12, 0.16, false);
       app.sunGlare = reflectedLight('#ff9a4d', 7, 55, 0.2);
       app.sunGlare.position.set(0, 0.12, -35);
       app.scene.add(app.sunGlare);
@@ -134,7 +159,7 @@ export function createShotScenes(app) {
     if (name === 'garageEconomy') {
       systems.shops.owned = new Set(['engine', 'armor', 'pistol', 'nitrous']);
       vehicles.spawn(config.x + 1, config.z - 2.8, -0.5, { model: 0, color: '#d1a44c' });
-      stageHeli(2.2, { x: 28, y: -12, z: 0 }, 0.9, 0.18, 0.2, false);
+      stageHeli(1.4, { x: 28, y: 0.5, z: 0 }, 0.9, 0.18, 0.2, false);
       app.sunGlare = reflectedLight('#ff9a4d', 7, 55, 0.2);
       app.sunGlare.position.set(-20, 0.12, 216);
       app.sunGlare.rotation.set(-Math.PI / 2, 0, Math.PI / 2);
@@ -164,6 +189,24 @@ export function createShotScenes(app) {
     if (config.camera) app.chase.setOrbit(config.camera.heading, config.camera.pitch, config.camera.distance);
     if (config.camera || name === 'coverHeliChase' || name === 'driveCarjacking') app.chase.update(0, player);
     app.sky.update(0, player.target, app.camera); app.renderer.render(app.scene, app.camera);
+    if (name === 'cityMapPause') {
+      // Eight jobs done: the map's checklist and the ring tell one story.
+      systems.missions.completed = [0, 1, 2, 3, 4, 5, 6, 7];
+      app.screens.showMap(state.snapshot(), state.city, CAREER, SLOTS);
+      app.setPaused(true);
+    }
+    if (name === 'titleScreen') {
+      // Dusk vista: high over the central boulevard, looking north into the
+      // sunset so the skyline reads behind the title. Paused so the manual
+      // camera pose survives the capture settle.
+      app.camera.position.set(0, 42, 240);
+      app.camera.lookAt(0, 6, -240);
+      app.camera.fov = 55;
+      app.camera.updateProjectionMatrix();
+      app.renderer.render(app.scene, app.camera);
+      app.screens.showTitle(state.snapshot(), SLOTS);
+      app.setPaused(true);
+    }
     return state.snapshot();
   };
   return Object.fromEntries(Object.keys(STAGES).map(name => [name, () => stage(name)]));
